@@ -25,6 +25,7 @@ class ArqueoOrdinarioController extends Controller
             ->where('receptor_usuario_id', $usuario->id)
             ->whereDate('fecha_operativa', now()->toDateString())
             ->whereHas('asignacionPersonal', fn ($q) => $q->where('usuario_id', $usuario->id)->where('cargo', 'RECEPTOR')->where('estado', true))
+            ->with(['arqueos' => fn ($q) => $q->where('tipo', 'ORDINARIO')->orderByDesc('id')])
             ->orderBy('inicio_programado')->get();
         $arqueos = ArqueoAgencia::with(['agencia', 'ventanilla'])
             ->where('receptor_usuario_id', $usuario->id)->where('tipo', 'ORDINARIO')
@@ -142,6 +143,30 @@ class ArqueoOrdinarioController extends Controller
             'arqueo' => $registro,
             'firmaValida' => $firma ? $firmas->verificar($registro, $firma) : false,
         ]);
+    }
+
+    /** Genera la boleta PDF sin exponer arqueos de otros receptores. */
+    public function imprimir(Request $request, int $arqueo, FirmaArqueoService $firmas)
+    {
+        $registro = ArqueoAgencia::with(['detalles', 'firmas'])
+            ->where('receptor_usuario_id', $request->user()->id)
+            ->where('tipo', 'ORDINARIO')
+            ->findOrFail($arqueo);
+
+        $firma = $registro->firmas->firstWhere('tipo_firma', 'RECEPTOR');
+        $firmaValida = $firma ? $firmas->verificar($registro, $firma) : false;
+
+        if (! class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            abort(503, 'Para generar el PDF debe instalarse barryvdh/laravel-dompdf.');
+        }
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('receptor.arqueos.imprimir', [
+            'arqueo' => $registro,
+            'firmaValida' => $firmaValida,
+            'billetes' => self::BILLETES,
+            'monedas' => self::MONEDAS,
+        ])->setPaper('letter', 'portrait')
+          ->stream('arqueo-'.preg_replace('/[^a-zA-Z0-9_-]/', '-', $registro->numero_arqueo).'.pdf');
     }
 
     private function jornadaAutorizada(Request $request, int $id): JornadaReceptor

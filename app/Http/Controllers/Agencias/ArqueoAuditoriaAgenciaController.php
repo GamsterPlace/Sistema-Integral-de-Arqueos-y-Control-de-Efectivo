@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Agencias;
 
 use App\Http\Controllers\Controller;
@@ -86,8 +87,8 @@ class ArqueoAuditoriaAgenciaController extends Controller
                 'numero_arqueo'=>'AU-'.now()->format('YmdHis').'-'.strtoupper(Str::random(12)),
                 'agencia_id'=>$j->agencia_id,'ventanilla_id'=>$j->ventanilla_id,'jornada_id'=>$j->id,
                 'receptor_usuario_id'=>$j->receptor_usuario_id,'creado_por'=>$u->id,
-                
-                
+
+
                 'tipo'=>'AUDITORIA','estado'=>'PENDIENTE_FIRMA_RECEPTOR','fecha_operativa'=>$j->fecha_operativa,
                 'inicio_at'=>now(),'finalizado_at'=>now(),'cierra_turno'=>false,'fuera_fecha_ordinaria'=>false,
                 'agencia_codigo_historico'=>$j->agencia->codigo,'agencia_nombre_historico'=>$j->agencia->nombre,
@@ -97,7 +98,7 @@ class ArqueoAuditoriaAgenciaController extends Controller
                 'total_otros_valores'=>'0.00','total_arqueado'=>number_format($total/100,2,'.',''),
                 'total_corte'=>number_format($corte/100,2,'.',''),'diferencia'=>number_format($dif/100,2,'.',''),
                 'justificacion_diferencia'=>$d['justificacion_diferencia']??null,'observaciones'=>$d['observaciones']??null,
-                
+
             ]);
             $registro->detalles()->createMany($detalles);
             $firmas->firmarAuditor($registro,$u);
@@ -195,5 +196,33 @@ class ArqueoAuditoriaAgenciaController extends Controller
     private function verificaciones(ArqueoAgencia $registro,FirmaArqueoService $firmas):array
     {
         $r=[];foreach($registro->firmas as $f)$r[$f->tipo_firma]=$firmas->verificar($registro,$f);return $r;
+    }
+
+    /** Impresión PDF: acceso limitado al ámbito de cada rol. */
+    public function imprimir(Request $request, int $arqueo, AccesoAgenciaService $acceso, FirmaArqueoService $firmas)
+    {
+        $usuario = $request->user();
+        $usuario->loadMissing('rol');
+        $rol = $usuario->rol?->nombre;
+        $consulta = ArqueoAgencia::query()->where('tipo', 'AUDITORIA');
+
+        if ($rol === 'Receptor') {
+            $consulta->where('receptor_usuario_id', $usuario->id);
+        } elseif (in_array($rol, ['JefeCaja', 'SubjefeCaja'], true)) {
+            [$agencias] = $this->caja($request, $acceso);
+            $consulta->whereIn('agencia_id', $agencias);
+        } elseif ($rol !== 'Auditoria') {
+            abort(403);
+        }
+
+        $registro = $consulta->with(['detalles', 'firmas'])->findOrFail($arqueo);
+        $verificaciones = $this->verificaciones($registro, $firmas);
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('agencias.auditoria.imprimir', [
+            'registro' => $registro,
+            'verificaciones' => $verificaciones,
+            'billetes' => self::BILLETES,
+            'monedas' => self::MONEDAS,
+        ])->setPaper('letter', 'portrait')->stream('arqueo-auditoria-'.$registro->numero_arqueo.'.pdf');
     }
 }

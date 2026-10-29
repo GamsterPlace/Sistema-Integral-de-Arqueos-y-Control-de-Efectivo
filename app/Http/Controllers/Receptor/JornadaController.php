@@ -10,10 +10,7 @@ use Illuminate\View\View;
 
 class JornadaController extends Controller
 {
-    /**
-     * Consulta jornadas propias, incluidas las históricas.
-     * La vigencia de la asignación no limita la lectura del historial.
-     */
+
     public function index(Request $request): View
     {
         $jornadas = $this->jornadasPropias((int) $request->user()->getKey())
@@ -25,9 +22,7 @@ class JornadaController extends Controller
         return view('receptor.jornadas.index', compact('jornadas'));
     }
 
-    /**
-     * El identificador por sí solo nunca autoriza el acceso.
-     */
+    /** El identificador por sí solo nunca autoriza el acceso. */
     public function show(Request $request, int $jornada): View
     {
         $registro = $this->jornadasPropias((int) $request->user()->getKey())
