@@ -1,15 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>@yield('title', 'Jefe de Agencia') | Sistema de Arqueos y Control de Efectivo</title>
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
     <style>
         :root {
             --azul-principal: #164c96;
@@ -22,10 +18,8 @@
             --texto-secundario: #6d7d8a;
             --sidebar-width: 278px;
         }
-
         * { box-sizing: border-box; }
         html, body { min-height: 100%; }
-
         body {
             margin: 0;
             min-height: 100vh;
@@ -35,11 +29,9 @@
             font-family: Inter, ui-sans-serif, system-ui, -apple-system,
                 BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-
         a { color: inherit; text-decoration: none; }
         button, input, select, textarea { font: inherit; }
         .app-layout { min-height: 100vh; }
-
         .sidebar {
             position: fixed;
             z-index: 50;
@@ -56,14 +48,12 @@
             box-shadow: 10px 0 30px rgba(4,36,70,.13);
             transition: transform .25s ease;
         }
-
         .sidebar-decoration {
             position: absolute;
             inset: 0;
             overflow: hidden;
             pointer-events: none;
         }
-
         .sidebar-decoration::before {
             content: "";
             position: absolute;
@@ -74,7 +64,6 @@
             border: 52px solid rgba(255,255,255,.04);
             border-radius: 50%;
         }
-
         .sidebar-decoration::after {
             content: "";
             position: absolute;
@@ -85,7 +74,6 @@
             border-radius: 50%;
             background: rgba(255,255,255,.035);
         }
-
         .sidebar-header,
         .sidebar-user,
         .sidebar-navigation,
@@ -93,12 +81,10 @@
             position: relative;
             z-index: 2;
         }
-
         .sidebar-header {
             padding: 24px 22px 20px;
             border-bottom: 1px solid rgba(255,255,255,.10);
         }
-
         .sidebar-logo-box {
             display: flex;
             justify-content: center;
@@ -107,7 +93,6 @@
             background: rgba(255,255,255,.97);
             box-shadow: 0 12px 26px rgba(0,0,0,.14);
         }
-
         .sidebar-logo {
             display: block;
             width: 100%;
@@ -115,18 +100,15 @@
             height: 62px;
             object-fit: contain;
         }
-
         .sidebar-system-name {
             margin-top: 17px;
             text-align: center;
         }
-
         .sidebar-system-name strong {
             display: block;
             font-size: 14px;
             line-height: 1.4;
         }
-
         .sidebar-system-name span {
             display: block;
             margin-top: 5px;
@@ -135,7 +117,6 @@
             letter-spacing: .7px;
             text-transform: uppercase;
         }
-
         .sidebar-user {
             display: flex;
             align-items: center;
@@ -146,7 +127,6 @@
             border-radius: 15px;
             background: rgba(255,255,255,.08);
         }
-
         .sidebar-user-avatar {
             flex: 0 0 auto;
             width: 43px;
@@ -157,14 +137,11 @@
             background: rgba(255,255,255,.14);
             color: #7be4aa;
         }
-
         .sidebar-user-avatar svg {
             width: 23px;
             height: 23px;
         }
-
         .sidebar-user-info { min-width: 0; }
-
         .sidebar-user-info strong {
             display: block;
             overflow: hidden;
@@ -172,7 +149,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
         .sidebar-user-info span {
             display: block;
             margin-top: 4px;
@@ -182,12 +158,10 @@
             letter-spacing: .7px;
             text-transform: uppercase;
         }
-
         .sidebar-navigation {
             flex: 1;
             padding: 18px 14px 22px;
         }
-
         .navigation-label {
             margin: 17px 11px 9px;
             color: rgba(255,255,255,.43);
@@ -196,14 +170,11 @@
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-
         .navigation-label:first-child { margin-top: 0; }
-
         .navigation-list {
             display: grid;
             gap: 7px;
         }
-
         .navigation-link {
             position: relative;
             display: flex;
@@ -221,13 +192,11 @@
                 background .2s ease,
                 transform .2s ease;
         }
-
         .navigation-link:hover {
             transform: translateX(3px);
             background: rgba(255,255,255,.09);
             color: #fff;
         }
-
         .navigation-link.active {
             background: linear-gradient(
                 135deg,
@@ -237,7 +206,6 @@
             color: #fff;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
         }
-
         .navigation-link.active::before {
             content: "";
             position: absolute;
@@ -248,7 +216,6 @@
             border-radius: 0 5px 5px 0;
             background: #70df9f;
         }
-
         .navigation-icon {
             flex: 0 0 auto;
             width: 34px;
@@ -258,7 +225,6 @@
             border-radius: 10px;
             background: rgba(255,255,255,.08);
         }
-
         .navigation-icon svg {
             width: 19px;
             height: 19px;
@@ -266,17 +232,14 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-
         .navigation-link.active .navigation-icon {
             background: rgba(112,223,159,.16);
             color: #7be4aa;
         }
-
         .sidebar-footer {
             padding: 17px 18px 20px;
             border-top: 1px solid rgba(255,255,255,.09);
         }
-
         .logout-button {
             width: 100%;
             min-height: 45px;
@@ -292,29 +255,24 @@
             font-weight: 750;
             cursor: pointer;
         }
-
         .logout-button:hover {
             background: rgba(255,255,255,.14);
             color: #fff;
         }
-
         .logout-button svg {
             width: 18px;
             height: 18px;
         }
-
         .main-area {
             min-height: 100vh;
             margin-left: var(--sidebar-width);
         }
-
         .content-wrapper {
             width: 100%;
             max-width: 1550px;
             margin: 0 auto;
             padding: 30px 30px 45px;
         }
-
         .page-header {
             display: flex;
             align-items: flex-start;
@@ -322,21 +280,18 @@
             gap: 25px;
             margin-bottom: 25px;
         }
-
         .page-title h2 {
             margin: 0;
             color: var(--azul-profundo);
             font-size: 28px;
             letter-spacing: -.7px;
         }
-
         .page-title p {
             margin: 8px 0 0;
             color: var(--texto-secundario);
             font-size: 14px;
             line-height: 1.55;
         }
-
         .alert-message {
             margin-bottom: 22px;
             padding: 14px 16px;
@@ -344,25 +299,21 @@
             font-size: 13px;
             line-height: 1.5;
         }
-
         .alert-message.success {
             border: 1px solid #b9e1c8;
             background: #effaf3;
             color: #176c40;
         }
-
         .alert-message.error {
             border: 1px solid #f0c9c9;
             background: #fff7f7;
             color: #a93636;
         }
-
         .alert-message.warning {
             border: 1px solid #f0d9a4;
             background: #fff9e9;
             color: #8a6511;
         }
-
         .sidebar-overlay {
             position: fixed;
             z-index: 45;
@@ -371,7 +322,6 @@
             background: rgba(4,27,49,.52);
             backdrop-filter: blur(2px);
         }
-
         .mobile-menu-button {
             display: none;
             position: fixed;
@@ -388,12 +338,10 @@
             box-shadow: 0 5px 18px rgba(4,36,70,.12);
             cursor: pointer;
         }
-
         .mobile-menu-button svg {
             width: 23px;
             height: 23px;
         }
-
         .sidebar-close-button {
             display: none;
             position: absolute;
@@ -408,49 +356,38 @@
             color: #fff;
             cursor: pointer;
         }
-
         @media (max-width: 1020px) {
             .sidebar {
                 transform: translateX(-100%);
             }
-
             .sidebar.open {
                 transform: translateX(0);
             }
-
             .sidebar-overlay.visible {
                 display: block;
             }
-
             .main-area { margin-left: 0; }
             .mobile-menu-button { display: grid; }
             .sidebar-close-button { display: block; }
-
             .content-wrapper {
                 padding: 75px 24px 35px;
             }
         }
-
         @media (max-width: 700px) {
             .content-wrapper {
                 padding: 75px 16px 35px;
             }
-
             .page-header { display: block; }
             .page-title h2 { font-size: 24px; }
         }
     </style>
-
     @stack('styles')
 </head>
-
 <body>
 @php
     $authUser = auth()->user();
-
     $authName = $authUser?->nombre_completo
         ?: ($authUser?->usuario ?? 'Jefe de Agencia');
-
     /*
     |--------------------------------------------------------------------------
     | Menú del Jefe de Agencia
@@ -459,7 +396,6 @@
     | Este rol conserva permisos exclusivamente de consulta.
     |--------------------------------------------------------------------------
     */
-
     $menuGroups = [
         'Panel Principal' => [
             [
@@ -473,7 +409,6 @@
                 'icon' => 'cash',
             ],
         ],
-
         'Supervisión de Arqueos' => [
             [
                 'route' => 'jefeagencia.historial-arqueos.index',
@@ -496,10 +431,9 @@
                 'icon' => 'calendar',
             ],
         ],
-
         'Mi Cuenta' => [
             [
-                'route' => 'jefeagencia.perfil.index',
+                'route' => 'agencias.perfil.index',
                 'label' => 'Mi Perfil',
                 'icon' => 'user',
             ],
@@ -511,16 +445,13 @@
         ],
     ];
 @endphp
-
 <div class="app-layout">
-
     <aside
         class="sidebar"
         id="sidebar"
         aria-label="Menú del jefe de agencia"
     >
         <div class="sidebar-decoration"></div>
-
         <button
             type="button"
             class="sidebar-close-button"
@@ -529,7 +460,6 @@
         >
             &times;
         </button>
-
         <header class="sidebar-header">
             <div class="sidebar-logo-box">
                 <img
@@ -538,7 +468,6 @@
                     class="sidebar-logo"
                 >
             </div>
-
             <div class="sidebar-system-name">
                 <strong>
                     Sistema de Arqueos y Control de Efectivo
@@ -546,7 +475,6 @@
                 <span>Agencias ECOSABA</span>
             </div>
         </header>
-
         <div class="sidebar-user">
             <span class="sidebar-user-avatar" aria-hidden="true">
                 <svg
@@ -559,13 +487,11 @@
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
             </span>
-
             <div class="sidebar-user-info">
                 <strong>{{ $authName }}</strong>
                 <span>Jefe de Agencia</span>
             </div>
         </div>
-
         <nav
             class="sidebar-navigation"
             aria-label="Navegación principal"
@@ -579,12 +505,10 @@
                             )
                     );
                 @endphp
-
                 @if($visibleItems->isNotEmpty())
                     <p class="navigation-label">
                         {{ $group }}
                     </p>
-
                     <div class="navigation-list">
                         @foreach($visibleItems as $item)
                             @php
@@ -594,7 +518,6 @@
                                         $item['route'] . '.*'
                                     );
                             @endphp
-
                             <a
                                 href="{{ route($item['route']) }}"
                                 class="navigation-link {{ $isActive ? 'active' : '' }}"
@@ -607,7 +530,6 @@
                                     aria-hidden="true"
                                 >
                                     @switch($item['icon'])
-
                                         @case('dashboard')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -616,20 +538,17 @@
                                                 <rect x="14" y="14" width="7" height="7" rx="1"/>
                                             </svg>
                                         @break
-
                                         @case('calendar')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <rect x="3" y="5" width="18" height="16" rx="2"/>
                                                 <path d="M8 3v4M16 3v4M3 10h18"/>
                                             </svg>
                                         @break
-
                                         @case('document')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <path d="M6 2h9l4 4v16H6zM14 2v5h5M9 13h6M9 17h6"/>
                                             </svg>
                                         @break
-
                                         @case('cash')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -637,38 +556,32 @@
                                                 <path d="M6 9h.01M18 15h.01"/>
                                             </svg>
                                         @break
-
                                         @case('user')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <circle cx="12" cy="8" r="4"/>
                                                 <path d="M4 21a8 8 0 0 1 16 0"/>
                                             </svg>
                                         @break
-
                                         @case('users')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <circle cx="9" cy="8" r="3"/>
                                                 <path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1"/>
                                             </svg>
                                         @break
-
                                         @case('check')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <circle cx="12" cy="12" r="9"/>
                                                 <path d="m8 12 3 3 5-6"/>
                                             </svg>
                                         @break
-
                                         @case('lock')
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                 <rect x="5" y="10" width="14" height="11" rx="2"/>
                                                 <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
                                             </svg>
                                         @break
-
                                     @endswitch
                                 </span>
-
                                 {{ $item['label'] }}
                             </a>
                         @endforeach
@@ -676,12 +589,10 @@
                 @endif
             @endforeach
         </nav>
-
         <footer class="sidebar-footer">
             @if(\Illuminate\Support\Facades\Route::has('logout'))
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <button
                         type="submit"
                         class="logout-button"
@@ -697,19 +608,16 @@
                         >
                             <path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6"/>
                         </svg>
-
                         Cerrar sesión
                     </button>
                 </form>
             @endif
         </footer>
     </aside>
-
     <div
         class="sidebar-overlay"
         id="sidebarOverlay"
     ></div>
-
     <button
         type="button"
         class="mobile-menu-button"
@@ -728,75 +636,59 @@
             <path d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
     </button>
-
     <main class="main-area">
         <div class="content-wrapper">
-
             @if(session('success'))
                 <div class="alert-message success" role="status">
                     {{ session('success') }}
                 </div>
             @endif
-
             @if(session('error'))
                 <div class="alert-message error" role="alert">
                     {{ session('error') }}
                 </div>
             @endif
-
             @if(session('warning'))
                 <div class="alert-message warning" role="status">
                     {{ session('warning') }}
                 </div>
             @endif
-
             @yield('content')
-
         </div>
     </main>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         const openButton = document.getElementById('mobileMenuButton');
         const closeButton = document.getElementById('sidebarCloseButton');
-
         if (!sidebar || !overlay || !openButton || !closeButton) {
             return;
         }
-
         function toggleMenu(open) {
             sidebar.classList.toggle('open', open);
             overlay.classList.toggle('visible', open);
-
             openButton.setAttribute(
                 'aria-expanded',
                 String(open)
             );
-
             document.body.style.overflow = open ? 'hidden' : '';
         }
-
         openButton.addEventListener('click', function () {
             toggleMenu(true);
         });
-
         closeButton.addEventListener('click', function () {
             toggleMenu(false);
         });
-
         overlay.addEventListener('click', function () {
             toggleMenu(false);
         });
-
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 toggleMenu(false);
             }
         });
-
         window.addEventListener('resize', function () {
             if (window.innerWidth > 1020) {
                 toggleMenu(false);
@@ -804,8 +696,6 @@
         });
     });
 </script>
-
 @stack('scripts')
-
 </body>
 </html>

@@ -1279,6 +1279,14 @@ Route::middleware([
             ]
         )->name('cumplimiento-agencias.index');
 
+        // Historial completo de arqueos de las agencias asignadas (solo consulta).
+        Route::get('/historial-arqueos', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'historial'])->name('historial-arqueos.index');
+        Route::get('/historial-arqueos/receptor/{receptor}', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'receptor'])->whereNumber('receptor')->name('historial-arqueos.receptor');
+        Route::get('/historial-arqueos/{arqueo}', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'show'])->whereNumber('arqueo')->name('historial-arqueos.show');
+        Route::get('/historial-arqueos/{arqueo}/imprimir', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'imprimir'])->whereNumber('arqueo')->name('historial-arqueos.imprimir');
+        Route::get('/arqueos-jefatura', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'jefatura'])->name('arqueos-jefatura.index');
+        Route::get('/arqueos-auditoria', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'auditoria'])->name('arqueos-auditoria.index');
+
         // Detalle de cumplimiento.
         Route::get(
             '/cumplimiento-arqueos/detalle',
