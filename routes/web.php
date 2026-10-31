@@ -1151,6 +1151,7 @@ Route::middleware(['auth', 'password.actualizada', 'rol:Receptor'])
         Route::get('/arqueos/nuevo/{jornada}', [\App\Http\Controllers\Receptor\ArqueoOrdinarioController::class, 'create'])->whereNumber('jornada')->name('arqueos.create');
         Route::post('/arqueos/nuevo/{jornada}', [\App\Http\Controllers\Receptor\ArqueoOrdinarioController::class, 'store'])->whereNumber('jornada')->name('arqueos.store');
         Route::get('/arqueos/{arqueo}', [\App\Http\Controllers\Receptor\ArqueoOrdinarioController::class, 'show'])->whereNumber('arqueo')->name('arqueos.show');
+        Route::get('/arqueos/{arqueo}/imprimir', [\App\Http\Controllers\Receptor\ArqueoOrdinarioController::class, 'imprimir'])->whereNumber('arqueo')->name('arqueos.imprimir');
         Route::get('/sorpresivos', [\App\Http\Controllers\Agencias\ArqueoSorpresivoController::class, 'receptorIndex'])->name('sorpresivos.index');
         Route::get('/sorpresivos/{arqueo}', [\App\Http\Controllers\Agencias\ArqueoSorpresivoController::class, 'receptorShow'])->whereNumber('arqueo')->name('sorpresivos.show');
         Route::get('/sorpresivos/{arqueo}/imprimir', [\App\Http\Controllers\Agencias\ArqueoSorpresivoController::class, 'receptorImprimir'])->whereNumber('arqueo')->name('sorpresivos.imprimir');
@@ -1182,6 +1183,7 @@ Route::middleware(['auth', 'password.actualizada', 'rol:JefeCaja'])
         Route::put('/jornadas/{jornada}', [\App\Http\Controllers\Agencias\GestionJornadasController::class, 'update'])->whereNumber('jornada')->name('jornadas.update');
 
         Route::get('/certificaciones', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'index'])->name('certificaciones.index');
+        Route::get('/certificaciones/ventanillas/{ventanilla}/historial', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'historial'])->whereNumber('ventanilla')->name('certificaciones.historial');
         Route::get('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'show'])->whereNumber('arqueo')->name('certificaciones.show');
         Route::get('/certificaciones/{arqueo}/imprimir', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'imprimir'])->whereNumber('arqueo')->name('certificaciones.imprimir');
         Route::post('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'store'])->whereNumber('arqueo')->name('certificaciones.store');
@@ -1219,6 +1221,7 @@ Route::middleware(['auth', 'password.actualizada', 'rol:SubjefeCaja'])
         Route::put('/jornadas/{jornada}', [\App\Http\Controllers\Agencias\GestionJornadasController::class, 'update'])->whereNumber('jornada')->name('jornadas.update');
 
         Route::get('/certificaciones', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'index'])->name('certificaciones.index');
+        Route::get('/certificaciones/ventanillas/{ventanilla}/historial', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'historial'])->whereNumber('ventanilla')->name('certificaciones.historial');
         Route::get('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'show'])->whereNumber('arqueo')->name('certificaciones.show');
         Route::get('/certificaciones/{arqueo}/imprimir', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'imprimir'])->whereNumber('arqueo')->name('certificaciones.imprimir');
         Route::post('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'store'])->whereNumber('arqueo')->name('certificaciones.store');
@@ -1279,6 +1282,15 @@ Route::middleware([
             ]
         )->name('cumplimiento-agencias.index');
 
+        Route::get('/certificaciones', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'index'])->name('certificaciones.index');
+
+
+        Route::get('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'show'])->whereNumber('arqueo')->name('certificaciones.show');
+
+        Route::get('/certificaciones/{arqueo}/imprimir', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'imprimir'])->whereNumber('arqueo')->name('certificaciones.imprimir');
+
+        Route::post('/certificaciones/{arqueo}', [\App\Http\Controllers\Agencias\CertificacionArqueoController::class, 'store'])->whereNumber('arqueo')->name('certificaciones.store');
+
         // Historial completo de arqueos de las agencias asignadas (solo consulta).
         Route::get('/historial-arqueos', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'historial'])->name('historial-arqueos.index');
         Route::get('/historial-arqueos/receptor/{receptor}', [\App\Http\Controllers\JefeAgencia\ConsultaArqueosController::class, 'receptor'])->whereNumber('receptor')->name('historial-arqueos.receptor');
@@ -1307,4 +1319,20 @@ Route::middleware(['auth', 'password.actualizada', 'rol:Auditoria'])
         Route::post('/arqueos-agencia', [\App\Http\Controllers\Agencias\ArqueoAuditoriaAgenciaController::class, 'store'])->name('auditoria-agencias.store');
         Route::get('/arqueos-agencia/{arqueo}', [\App\Http\Controllers\Agencias\ArqueoAuditoriaAgenciaController::class, 'show'])->whereNumber('arqueo')->name('auditoria-agencias.show');
         Route::get('/arqueos-agencia/{arqueo}/imprimir', [\App\Http\Controllers\Agencias\ArqueoAuditoriaAgenciaController::class, 'imprimir'])->whereNumber('arqueo')->name('auditoria-agencias.imprimir');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Centro de Reportes - Agencias ECOSABA
+|--------------------------------------------------------------------------
+| El controlador autoriza roles y el servicio delimita agencias.
+*/
+Route::middleware(['auth', 'password.actualizada'])
+    ->prefix('agencias/reportes')
+    ->name('agencias.reportes.')
+    ->controller(\App\Http\Controllers\Agencias\ReporteController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/pdf', 'imprimir')->name('pdf');
+        Route::get('/csv', 'csv')->name('csv');
     });

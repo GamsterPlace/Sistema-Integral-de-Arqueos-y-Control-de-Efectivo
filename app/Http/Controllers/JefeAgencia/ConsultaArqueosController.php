@@ -104,17 +104,40 @@ class ConsultaArqueosController extends Controller
             return view('jefe-agencia.consulta-arqueos.index', compact('arqueos', 'agencias', 'filtros', 'titulo', 'tipo'));
         }
 
-        // Historial: fichas de receptores, no una tabla genérica.
+        // Las fichas se construyen a partir de las asignaciones de receptores,
+        // no de los arqueos. Así también aparecen quienes aún no han arqueado.
+        $agenciaIds = $agencias->pluck('id')->all();
+        $hoy = now()->toDateString();
+        $receptorIds = AsignacionPersonalAgencia::query()
+            ->whereIn('agencia_id', $agenciaIds)
+            ->where('cargo', 'RECEPTOR')
+            ->where('estado', true)
+            ->whereIn('tipo', ['PERMANENTE', 'TEMPORAL'])
+            ->whereDate('fecha_inicio', '<=', $hoy)
+            ->where(function ($q) use ($hoy) {
+                $q->whereNull('fecha_fin')->orWhereDate('fecha_fin', '>=', $hoy);
+            })
+            ->select('usuario_id');
+
         $receptores = Usuario::query()
             ->with('datosPersonales')
-            ->whereIn('id', (clone $query)->whereNotNull('receptor_usuario_id')
-                ->select('receptor_usuario_id')->distinct())
-            ->orderBy('id')->paginate(12)->withQueryString();
+            ->whereIn('id', $receptorIds)
+            ->orderBy('id')
+            ->paginate(12)
+            ->withQueryString();
+
         $ids = $receptores->getCollection()->pluck('id')->all();
-        $ultimos = (clone $query)->with('agencia')->whereIn('receptor_usuario_id', $ids)
-            ->whereNotNull('firmado_receptor_at')->whereNull('anulado_at')
-            ->orderByDesc('fecha_operativa')->orderByDesc('id')->get()
-            ->groupBy('receptor_usuario_id')->map(fn ($items) => $items->take(3));
+        $ultimos = (clone $query)
+            ->with('agencia')
+            ->whereIn('receptor_usuario_id', $ids)
+            ->whereNotNull('firmado_receptor_at')
+            ->whereNull('anulado_at')
+            ->orderByDesc('fecha_operativa')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('receptor_usuario_id')
+            ->map(fn ($items) => $items->take(3));
+
         return view('jefe-agencia.consulta-arqueos.historial', compact('receptores', 'ultimos', 'titulo'));
     }
 
@@ -126,7 +149,25 @@ class ConsultaArqueosController extends Controller
             ->with(['agencia', 'ventanilla'])
             ->orderByDesc('fecha_operativa')->orderByDesc('id')
             ->paginate(20);
-        abort_if($arqueos->total() === 0, 404);
+        // El receptor puede tener una ficha válida sin arqueos todavía.
+        // Verificar asignación actual a una agencia autorizada para evitar
+        // que la URL permita consultar usuarios ajenos.
+        if ($arqueos->total() === 0) {
+            [, $asignaciones] = $this->consultaAutorizada($request);
+            $agenciaIds = $asignaciones->pluck('agencia_id')->unique()->all();
+            $hoy = now()->toDateString();
+            $autorizado = AsignacionPersonalAgencia::query()
+                ->where('usuario_id', $receptor)
+                ->whereIn('agencia_id', $agenciaIds)
+                ->where('cargo', 'RECEPTOR')
+                ->where('estado', true)
+                ->whereDate('fecha_inicio', '<=', $hoy)
+                ->where(function ($q) use ($hoy) {
+                    $q->whereNull('fecha_fin')->orWhereDate('fecha_fin', '>=', $hoy);
+                })
+                ->exists();
+            abort_unless($autorizado, 404);
+        }
         return view('jefe-agencia.consulta-arqueos.receptor', compact('arqueos', 'usuarioReceptor'));
     }
 

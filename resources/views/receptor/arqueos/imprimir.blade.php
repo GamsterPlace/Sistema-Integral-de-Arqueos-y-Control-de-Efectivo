@@ -1,247 +1,306 @@
 
+@php
+    $billetes = [200, 100, 50, 20, 10, 5, 1];
+    $monedas = ['1.00', '0.50', '0.25', '0.10', '0.05', '0.01'];
+    $detalles = $arqueo->detalles ?? collect();
+    $firmaReceptor = ($arqueo->firmas ?? collect())->firstWhere('tipo_firma', 'RECEPTOR');
+    $firmaCertificador = ($arqueo->firmas ?? collect())->firstWhere('tipo_firma', 'CERTIFICADOR');
+    $logoRuta = public_path('images/logos/ecosaba.png');
+    $logoBase64 = is_file($logoRuta) && is_readable($logoRuta)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoRuta)) : null;
+
+    $moneda = fn ($valor) => 'Q '.number_format((float) ($valor ?? 0), 2, '.', ',');
+
+    $detalleDenominacion = function ($tipo, $valor) use ($detalles) {
+        return $detalles->first(fn ($detalle) => $detalle->tipo === $tipo
+            && (int) round((float) $detalle->denominacion * 100) === (int) round((float) $valor * 100));
+    };
+
+    $detalleConcepto = fn ($concepto) => $detalles->first(fn ($detalle) => $detalle->tipo === 'OTRO' && $detalle->concepto === $concepto);
+
+    $fecha = $arqueo->fecha_operativa ? \Illuminate\Support\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y') : '—';
+    $inicio = $arqueo->inicio_at ? \Illuminate\Support\Carbon::parse($arqueo->inicio_at)->format('H:i') : '—';
+    $fin = $arqueo->finalizado_at ? \Illuminate\Support\Carbon::parse($arqueo->finalizado_at)->format('H:i') : '—';
+    $diferencia = (float) ($arqueo->diferencia ?? 0);
+    $estado = strtoupper((string) $arqueo->estado);
+    $firmaValida = $firmaValida ?? false;
+    $justificacion = trim((string) ($arqueo->justificacion_diferencia ?? ''));
+    $observaciones = trim((string) ($arqueo->observaciones ?? ''));
+
+    // La firma de certificación debe identificar al firmante real, no al jefe asignado.
+    // Se aprovechan únicamente los datos disponibles en el registro o su relación cargada.
+    $nombreCertificador = $firmaCertificador
+        ? (data_get($firmaCertificador, 'firmante_nombre_historico')
+            ?: data_get($firmaCertificador, 'nombre_firmante')
+            ?: data_get($firmaCertificador, 'usuario.nombre_completo')
+            ?: data_get($firmaCertificador, 'usuario.nombre'))
+        : null;
+
+    $cargoCertificador = $firmaCertificador
+        ? (data_get($firmaCertificador, 'cargo_historico')
+            ?: data_get($firmaCertificador, 'cargo_firmante')
+            ?: 'Jefe / Subjefe de Caja')
+        : 'Jefe / Subjefe de Caja';
+
+    $fechaFirmaCertificador = $firmaCertificador
+        ? (data_get($firmaCertificador, 'fecha_firma') ?: $arqueo->certificado_at)
+        : null;
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<title>Arqueo y corte de caja - {{ $registro->numero_arqueo }}</title>
-<style>
-@page { size:letter portrait; margin:11mm 13mm 12mm; }
-*{box-sizing:border-box}
-body{font-family:DejaVu Sans,Arial,sans-serif;font-size:9px;color:#202a36;margin:0}
-.head{width:100%;border-collapse:collapse;margin-bottom:13px}
-.head td{vertical-align:middle}
-.logo{width:148px;max-height:48px;object-fit:contain}
-.brand{font-size:16px;font-weight:bold;color:#174b80}
-.center{text-align:center}.right{text-align:right}
-.heading{font-size:14px;font-weight:bold;letter-spacing:.2px}
-.agency{font-size:11px;margin-top:3px}
-.number{font-size:10px;color:#9c4646;letter-spacing:.7px}
-.meta{width:100%;border-collapse:collapse;margin-bottom:12px}
-.meta td{padding:5px 5px 5px 0;border-bottom:1px solid #d4dbe2}
-.title{font-size:10px;font-weight:bold;margin:11px 0 5px;color:#193d62}
-.count{width:77%;border-collapse:collapse;table-layout:fixed}
-.count th{font-size:9px;text-align:left;border-bottom:1px solid #697c8d;padding:4px 6px}
-.count td{border-bottom:1px solid #e0e5e9;padding:3px 6px;height:18px}
-.count .money{text-align:right}
-.subtotal{width:77%;text-align:right;font-weight:bold;padding:5px 6px;border-bottom:1px solid #697c8d}
-.others{width:77%;border-collapse:collapse}
-.others td{border-bottom:1px solid #e0e5e9;padding:5px}
-.summary{width:50%;margin-left:50%;margin-top:12px;border-collapse:collapse}
-.summary td{padding:5px;border-bottom:1px solid #b7c3ce}
-.summary td:last-child{text-align:right;white-space:nowrap}
-.cert{width:50%;margin-left:50%;margin-top:12px;min-height:63px;line-height:1.5;white-space:pre-wrap;overflow-wrap:break-word}
-.signs{width:100%;border-collapse:collapse;margin-top:42px;page-break-inside:avoid}
-.signs td{width:50%;padding:0 22px;vertical-align:bottom;text-align:center}
-.sign-line{border-top:1px solid #506273;padding-top:7px;font-size:9px}
-.sign-name{font-size:8px;margin-top:4px}
-.status{font-size:7px;color:#596d7f;margin-top:4px}
-.foot{font-size:7px;color:#5b6e7d;margin-top:13px;line-height:1.5}
-</style>
+    <meta charset="UTF-8">
+    <title>Arqueo y corte de caja - {{ $arqueo->numero_arqueo }}</title>
+    <style>
+        @page { size: letter portrait; margin: 16px 28px 16px 28px; }
+        * { box-sizing: border-box; }
+        body { margin: 0; color: #243d53; font-family: DejaVu Sans, sans-serif; font-size: 8px; line-height: 1.25; }
+        table { border-collapse: collapse; width: 100%; }
+
+        .head { border-bottom: 2px solid #174a73; padding-bottom: 8px; margin-bottom: 7px; }
+        .head td { vertical-align: middle; }
+        .logo-cell { width: 29%; }
+        .logo { width: 155px; max-height: 74px; }
+        .head-center { width: 43%; text-align: center; }
+        .head-title { font-size: 13px; font-weight: bold; color: #123e65; letter-spacing: .2px; }
+        .head-number { width: 28%; text-align: right; }
+        .head-number small { font-size: 7px; color: #758b9c; }
+        .head-number strong { display: block; font-size: 12px; color: #bd202b; margin-top: 4px; overflow-wrap: anywhere; font-weight: bold; }
+
+        .info { margin-bottom: 7px; }
+        .info td { padding: 2px 7px 4px 0; vertical-align: top; }
+        .label { color: #6d8293; font-size: 7px; font-weight: bold; margin-bottom: 3px; }
+        .value { font-size: 8px; font-weight: bold; border-bottom: 1px solid #b6c6d2; padding: 0 0 4px; min-height: 12px; }
+
+        /* Diseño compacto inspirado en el formulario físico oficial. */
+        .form-layout { width: 100%; table-layout: fixed; margin-top: 6px; }
+        .form-layout > tbody > tr > td { vertical-align: top; }
+        .denominations-column { width: 56%; padding-right: 10px; }
+        .verification-column { width: 44%; padding-left: 10px; }
+
+        .section-heading { color: #16486f; font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+        .coins-heading { margin-top: 12px; }
+        .other-heading { margin-top: 12px; }
+
+        .denomination-table { table-layout: fixed; width: 100%; }
+        .denomination-table th { color: #536e82; font-size: 7.6px; text-align: left; border: none; padding: 3px 2px 4px; }
+        .denomination-table th:nth-child(1) { width: 25%; }
+        .denomination-table th:nth-child(2) { width: 17%; text-align: center; }
+        .denomination-table th:nth-child(3) { width: 29%; text-align: right; }
+        .denomination-table th:nth-child(4) { width: 29%; text-align: right; }
+        .denomination-table td { font-size: 9px; padding: 3px 2px; border: none; white-space: nowrap; }
+        .denomination-table td.quantity { text-align: center; }
+        .denomination-table td.amount { text-align: right; font-weight: bold; }
+        .denomination-table td.total-empty { border: none; }
+        .denomination-table td.group-total { text-align: right; vertical-align: bottom; font-weight: bold; font-size: 9px; color: #174a73; border: none; }
+
+        .value-rule { display: inline-block; border-bottom: 1px solid #8ea8b9; min-width: 39px; padding-bottom: 2px; }
+        .amount .value-rule { min-width: 65px; }
+        .group-total .value-rule { min-width: 68px; }
+
+        .other-table td { padding-top: 5px; padding-bottom: 5px; }
+
+        .total-arqueado { margin-top: 8px; border-top: 2px solid #16486f; border-bottom: 2px solid #16486f; }
+        .total-arqueado td { padding: 6px 4px; font-size: 10px; font-weight: bold; color: #123e65; }
+        .total-arqueado td:last-child { text-align: right; font-size: 13px; }
+
+        .verification-position { padding-top: 285px; }
+        .verification-title { color: #16486f; text-align: center; font-size: 11px; font-weight: bold; margin-bottom: 7px; }
+        .verification-table td { padding: 5px 2px; font-size: 9px; border-bottom: 1px solid #bacbd7; }
+        .verification-table td:last-child { text-align: right; font-weight: bold; white-space: nowrap; }
+        .verification-difference td { border-bottom: 2px solid #16486f; font-weight: bold; }
+        .difference-kind { font-size: 7px; color: #4a6d83; text-align: right; font-weight: bold; padding-top: 5px; }
+
+        .certification-title { color: #16486f; font-size: 10px; font-weight: bold; margin: 12px 0 5px; }
+        .certification-text { font-size: 8.5px; line-height: 1.5; min-height: 53px; padding: 5px 2px; border-top: 1px solid #b9cad7; border-bottom: 1px solid #b9cad7; white-space: pre-wrap; overflow-wrap: break-word; }
+        .observations-title { color: #617c90; font-size: 7px; font-weight: bold; margin: 7px 0 4px; }
+        .observations-text { font-size: 8px; line-height: 1.4; min-height: 35px; border-bottom: 1px solid #b9cad7; white-space: pre-wrap; overflow-wrap: break-word; }
+
+        .official-signatures { width: 100%; table-layout: fixed; margin-top: 12px; page-break-inside: avoid; }
+        .official-signatures td { width: 50%; padding: 0 22px; text-align: center; vertical-align: bottom; }
+        .signature-caption { font-size: 8px; color: #536e82; margin-bottom: 9px; }
+        .signature-name { min-height: 16px; font-size: 10px; font-weight: bold; color: #123e65; padding-bottom: 4px; border-bottom: 1px solid #819eaf; overflow-wrap: break-word; }
+        .signature-role { font-size: 9px; font-weight: bold; color: #243d53; padding-top: 6px; }
+        .signature-status { font-size: 8px; color: #5b778b; margin-top: 5px; }
+        .signature-timestamp { margin-top: 5px; color: #698095; font-size: 7px; }
+
+        .document-integrity { margin-top: 5px; text-align: center; color: #567589; font-size: 7px; page-break-inside: avoid; }
+        .document-footer { margin-top: 4px; padding-top: 4px; border-top: 1px solid #d6e2e9; text-align: center; color: #8193a0; font-size: 6px; page-break-inside: avoid; }
+    </style>
 </head>
 <body>
-@php
-    $certificador = $registro->firmas->firstWhere('tipo_firma', 'CERTIFICADOR');
-    $receptor = $registro->firmas->firstWhere('tipo_firma', 'RECEPTOR');
+    <table class="head">
+        <tr>
+            <td class="logo-cell">
+                @if($logoBase64)
+                    <img src="{{ $logoBase64 }}" class="logo" alt="ECOSABA">
+                @else
+                    <strong>ECOSABA R.L.</strong>
+                @endif
+            </td>
+            <td class="head-center">
+                <div class="head-title">ARQUEO Y CORTE DE CAJA</div>
+            </td>
+            <td class="head-number">
+                <small>NÚMERO DE ARQUEO</small>
+                <strong>{{ $arqueo->numero_arqueo }}</strong>
+            </td>
+        </tr>
+    </table>
 
-    $nombreFirma = fn ($firma) => $firma
-        ? trim($firma->nombres_historicos.' '.$firma->apellidos_historicos)
-        : 'Pendiente de firma';
+    <table class="info">
+        <tr>
+            <td width="50%"><div class="label">NOMBRE DEL RECEPTOR</div><div class="value">{{ $arqueo->receptor_nombre_historico ?? '—' }}</div></td>
+            <td width="25%"><div class="label">FECHA</div><div class="value">{{ $fecha }}</div></td>
+            <td width="12.5%"><div class="label">H. INICIO</div><div class="value">{{ $inicio }}</div></td>
+            <td width="12.5%"><div class="label">H. FIN</div><div class="value">{{ $fin }}</div></td>
+        </tr>
+        <tr>
+            <td><div class="label">AGENCIA</div><div class="value">{{ $arqueo->agencia_nombre_historico ?? '—' }}</div></td>
+            <td><div class="label">VENTANILLA</div><div class="value">{{ $arqueo->ventanilla_codigo_historico ?? '—' }}</div></td>
+            <td colspan="2"><div class="label">TURNO</div><div class="value">{{ $arqueo->turno_nombre_historico ?? '—' }}</div></td>
+        </tr>
+    </table>
 
-    $moneda = fn ($monto) => 'Q '.number_format((float) $monto, 2, '.', ',');
-@endphp
+    {{-- Distribución institucional basada en el formulario físico. --}}
+    <table class="form-layout">
+        <tr>
+            <td class="denominations-column">
+                <div class="section-heading">Billetes</div>
+                <table class="denomination-table">
+                    <thead>
+                        <tr>
+                            <th>Denominación</th>
+                            <th>Cantidad</th>
+                            <th>Sub-total</th>
+                            <th class="totals-heading">Totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($billetes as $valor)
+                            @php($detalle = $detalleDenominacion('BILLETE', $valor))
+                            <tr>
+                                <td>{{ $moneda($valor) }}</td>
+                                <td class="quantity"><span class="value-rule">{{ number_format((int) ($detalle?->cantidad ?? 0)) }}</span></td>
+                                <td class="amount"><span class="value-rule">{{ $moneda($detalle?->subtotal) }}</span></td>
+                                <td class="{{ $loop->last ? 'group-total' : 'total-empty' }}">
+                                    @if($loop->last)<span class="value-rule">{{ $moneda($arqueo->total_billetes) }}</span>@endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-<table class="head">
-<tr>
-<td style="width:26%">
-    @if($logoData)
-        <img class="logo" src="{{ $logoData }}" alt="ECOSABA">
-    @else
-        <span class="brand">ECOSABA</span>
-    @endif
-</td>
-<td class="center" style="width:49%">
-    <div class="heading">ARQUEO Y CORTE DE CAJA</div>
-    <div class="agency">{{ $registro->agencia_nombre_historico }}</div>
-    <div style="font-size:8px;margin-top:3px">Jefatura de Caja</div>
-</td>
-<td class="right" style="width:25%">
-    <span class="number">N.º {{ $registro->numero_arqueo }}</span>
-</td>
-</tr>
-</table>
+                <div class="section-heading coins-heading">Monedas</div>
+                <table class="denomination-table">
+                    <thead>
+                        <tr>
+                            <th>Denominación</th>
+                            <th>Cantidad</th>
+                            <th>Sub-total</th>
+                            <th class="totals-heading">Totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($monedas as $valor)
+                            @php($detalle = $detalleDenominacion('MONEDA', $valor))
+                            <tr>
+                                <td>{{ $moneda($valor) }}</td>
+                                <td class="quantity"><span class="value-rule">{{ number_format((int) ($detalle?->cantidad ?? 0)) }}</span></td>
+                                <td class="amount"><span class="value-rule">{{ $moneda($detalle?->subtotal) }}</span></td>
+                                <td class="{{ $loop->last ? 'group-total' : 'total-empty' }}">
+                                    @if($loop->last)<span class="value-rule">{{ $moneda($arqueo->total_monedas) }}</span>@endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-<table class="meta">
-<tr>
-<td style="width:43%">
-    <b>Nombres:</b> {{ $registro->receptor_nombre_historico }}
-</td>
-<td style="width:22%">
-    <b>Fecha:</b> {{ $registro->fecha_operativa?->format('d/m/Y') ?? '—' }}
-</td>
-<td style="width:17%">
-    <b>H.I.:</b> {{ $registro->inicio_at?->format('H:i') ?? '—' }}
-</td>
-<td style="width:18%">
-    <b>H.F.:</b> {{ $registro->finalizado_at?->format('H:i') ?? '—' }}
-</td>
-</tr>
-</table>
+                <div class="section-heading other-heading">Otros valores</div>
+                <table class="denomination-table other-table">
+                    <thead>
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Cantidad</th>
+                            <th>Sub-total</th>
+                            <th class="totals-heading">Totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(['CHEQUES' => 'Cheques', 'VALES' => 'Vales', 'OTROS_VALORES' => 'Otros valores'] as $codigo => $nombre)
+                            @php($detalle = $detalleConcepto($codigo))
+                            <tr>
+                                <td>{{ $nombre }}</td>
+                                <td class="quantity"><span class="value-rule">{{ (int) ($detalle?->cantidad ?? 0) }}</span></td>
+                                <td class="amount"><span class="value-rule">{{ $moneda($detalle?->subtotal) }}</span></td>
+                                <td class="{{ $loop->last ? 'group-total' : 'total-empty' }}">
+                                    @if($loop->last)<span class="value-rule">{{ $moneda($arqueo->total_otros_valores) }}</span>@endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-<div class="title">Billetes</div>
-<table class="count">
-<thead>
-<tr>
-    <th>Denominación</th>
-    <th>Cantidad</th>
-    <th class="money">Sub-total</th>
-</tr>
-</thead>
-<tbody>
-@foreach($billetes as $valor)
-    @php
-        $detalle = $registro->detalles->first(
-            fn ($d) => $d->tipo === 'BILLETE'
-                && (int) round((float) $d->denominacion) === (int) $valor
-        );
-    @endphp
-    <tr>
-        <td>{{ $moneda($valor) }}</td>
-        <td>{{ $detalle?->cantidad ?? 0 }}</td>
-        <td class="money">{{ $moneda($detalle?->subtotal ?? 0) }}</td>
-    </tr>
-@endforeach
-</tbody>
-</table>
+                <table class="total-arqueado">
+                    <tr>
+                        <td>TOTAL ARQUEADO</td>
+                        <td>{{ $moneda($arqueo->total_arqueado) }}</td>
+                    </tr>
+                </table>
+            </td>
 
-<div class="subtotal">
-    Total billetes: {{ $moneda($registro->total_billetes) }}
-</div>
+            <td class="verification-column">
+                <div class="verification-position">
+                    <div class="verification-title">COMPROBACIÓN</div>
+                    <table class="verification-table">
+                        <tr>
+                            <td>Total Arqueado</td>
+                            <td>{{ $moneda($arqueo->total_arqueado) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Total Corte</td>
+                            <td>{{ $moneda($arqueo->total_corte) }}</td>
+                        </tr>
+                        <tr class="verification-difference">
+                            <td>Diferencia</td>
+                            <td>{{ $diferencia < 0 ? '-' : '' }}{{ $moneda(abs($diferencia)) }}</td>
+                        </tr>
+                    </table>
 
-<div class="title">Monedas</div>
-<table class="count">
-<thead>
-<tr>
-    <th>Denominación</th>
-    <th>Cantidad</th>
-    <th class="money">Sub-total</th>
-</tr>
-</thead>
-<tbody>
-@foreach($monedas as $valor)
-    @php
-        $detalle = $registro->detalles->first(
-            fn ($d) => $d->tipo === 'MONEDA'
-                && (int) round((float) $d->denominacion * 100)
-                    === (int) round((float) $valor * 100)
-        );
-    @endphp
-    <tr>
-        <td>{{ $moneda($valor) }}</td>
-        <td>{{ $detalle?->cantidad ?? 0 }}</td>
-        <td class="money">{{ $moneda($detalle?->subtotal ?? 0) }}</td>
-    </tr>
-@endforeach
-</tbody>
-</table>
+                    <div class="difference-kind">
+                        {{ $diferencia > 0 ? 'SOBRANTE' : ($diferencia < 0 ? 'FALTANTE' : 'CUADRADO') }}
+                    </div>
 
-<div class="subtotal">
-    Total monedas: {{ $moneda($registro->total_monedas) }}
-</div>
+                    <div class="certification-title">Certificación / Justificación</div>
+                    <div class="certification-text">{{ $justificacion !== '' ? $justificacion : 'Sin justificación registrada.' }}</div>
 
-<div class="title">Otros valores</div>
-<table class="others">
-@foreach(['Cheques', 'Vales', 'Otros valores'] as $concepto)
-    @php
-        $detalle = $registro->detalles->first(
-            fn ($d) => $d->tipo === 'OTRO'
-                && mb_strtolower(trim((string) $d->concepto))
-                    === mb_strtolower($concepto)
-        );
-    @endphp
-    <tr>
-        <td>{{ $concepto }}</td>
-        <td class="right">
-            {{ $detalle ? $moneda($detalle->subtotal) : '—' }}
-        </td>
-    </tr>
-@endforeach
-<tr>
-    <td><b>Total otros valores</b></td>
-    <td class="right">
-        <b>{{ $moneda($registro->total_otros_valores) }}</b>
-    </td>
-</tr>
-</table>
+                    <div class="observations-title">OBSERVACIONES</div>
+                    <div class="observations-text">{{ $observaciones !== '' ? $observaciones : 'Sin observaciones registradas.' }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
 
-<table class="summary">
-<tr>
-    <td><b>Total Arqueado</b></td>
-    <td><b>{{ $moneda($registro->total_arqueado) }}</b></td>
-</tr>
-<tr>
-    <td colspan="2" class="center"><b>COMPROBACIÓN</b></td>
-</tr>
-<tr>
-    <td>Total Arqueado</td>
-    <td>{{ $moneda($registro->total_arqueado) }}</td>
-</tr>
-<tr>
-    <td>Total Corte</td>
-    <td>{{ $moneda($registro->total_corte) }}</td>
-</tr>
-<tr>
-    <td><b>Diferencia</b></td>
-    <td><b>{{ $moneda($registro->diferencia) }}</b></td>
-</tr>
-</table>
+    <table class="official-signatures">
+        <tr>
+            <td>
+                <div class="signature-caption">Firma</div>
+                <div class="signature-name">{{ $firmaReceptor ? ($arqueo->receptor_nombre_historico ?: 'Nombre no disponible') : '—' }}</div>
+                <div class="signature-role">Receptor - Pagador</div>
+                <div class="signature-status">{{ $firmaReceptor ? 'Firmado electrónicamente' : 'Pendiente de firma' }}</div>
+                <div class="signature-timestamp">{{ $firmaReceptor && $arqueo->firmado_receptor_at ? \Illuminate\Support\Carbon::parse($arqueo->firmado_receptor_at)->format('d/m/Y H:i:s') : '—' }}</div>
+            </td>
+            <td>
+                <div class="signature-caption">Firma</div>
+                <div class="signature-name">{{ $firmaCertificador ? ($nombreCertificador ?: 'Nombre del firmante no disponible') : '—' }}</div>
+                <div class="signature-role">{{ $cargoCertificador }}</div>
+                <div class="signature-status">{{ $firmaCertificador ? 'Firmado electrónicamente' : 'Pendiente de certificación' }}</div>
+                <div class="signature-timestamp">{{ $fechaFirmaCertificador ? \Illuminate\Support\Carbon::parse($fechaFirmaCertificador)->format('d/m/Y H:i:s') : '—' }}</div>
+            </td>
+        </tr>
+    </table>
 
-<div class="cert">
-<b>Certificación / observaciones:</b>
-{{ $registro->justificacion_diferencia ?: 'Sin diferencia justificada.' }}
-@if($registro->observaciones)
-{{ $registro->observaciones }}
-@endif
-</div>
-
-<table class="signs">
-<tr>
-<td>
-    <div class="sign-line">Receptor - Pagador</div>
-    <div class="sign-name">{{ $nombreFirma($receptor) }}</div>
-    <div class="status">
-        @if($receptor)
-            {{ ($verificaciones['RECEPTOR'] ?? false)
-                ? 'Firma electrónica verificada'
-                : 'Firma electrónica no verificada' }}
-            · {{ $receptor->fecha_firma?->format('d/m/Y H:i') }}
-        @else
-            Pendiente de firma electrónica
-        @endif
-    </div>
-</td>
-<td>
-    <div class="sign-line">Vo. Bo. Jefe / Subjefe de Caja</div>
-    <div class="sign-name">{{ $nombreFirma($certificador) }}</div>
-    <div class="status">
-        @if($certificador)
-            {{ ($verificaciones['CERTIFICADOR'] ?? false)
-                ? 'Firma electrónica verificada'
-                : 'Firma electrónica no verificada' }}
-            · {{ $certificador->fecha_firma?->format('d/m/Y H:i') }}
-        @else
-            Pendiente de firma electrónica
-        @endif
-    </div>
-</td>
-</tr>
-</table>
-
-<div class="foot">
-Documento electrónico · Estado: {{ str_replace('_', ' ', $registro->estado) }}
-· Número: {{ $registro->numero_arqueo }}.
-Las firmas se verifican contra los datos económicos almacenados;
-este documento no reproduce firmas manuscritas.
-</div>
-
+    <div class="document-integrity">Integridad de firma del receptor: <strong>{{ $firmaReceptor && $firmaValida ? 'VERIFICADA' : 'NO VERIFICADA' }}</strong></div>
+    <div class="document-footer">ECOSABA R.L. · Sistema Integral de Arqueos y Control de Efectivo · Documento generado electrónicamente · {{ $arqueo->numero_arqueo }}</div>
 </body>
 </html>

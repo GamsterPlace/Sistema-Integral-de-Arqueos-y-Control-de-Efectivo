@@ -4,9 +4,11 @@ namespace App\Http\Controllers\JefeAgencia;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArqueoAgencia;
+use App\Models\AsignacionOperativaReceptor;
 use App\Models\JornadaReceptor;
 use App\Models\VentanillaAgencia;
 use App\Services\Agencias\AccesoAgenciaService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -24,6 +26,12 @@ class DashboardController extends Controller
             $usuario->rol?->nombre === 'JefeAgencia',
             403
         );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Agencias autorizadas
+        |--------------------------------------------------------------------------
+        */
 
         $asignaciones = $acceso
             ->asignacionesVigentes($usuario)
@@ -54,6 +62,51 @@ class DashboardController extends Controller
             ->where('estado', true)
             ->count();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Asignaciones operativas vigentes
+        |--------------------------------------------------------------------------
+        |
+        | Se consultan las asignaciones del día sin
+        | depender de que el receptor haya iniciado sesión.
+        |
+        */
+
+        $asignacionesOperativas = AsignacionOperativaReceptor::query()
+            ->whereIn('agencia_id', $agenciaIds)
+            ->vigentes()
+            ->whereHas(
+                'asignacionPersonal',
+                function (Builder $query) use ($fecha): void {
+                    $query
+                        ->where('cargo', 'RECEPTOR')
+                        ->where('estado', true)
+                        ->whereDate('fecha_inicio', '<=', $fecha)
+                        ->where(function (Builder $subquery) use ($fecha): void {
+                            $subquery
+                                ->whereNull('fecha_fin')
+                                ->orWhereDate('fecha_fin', '>=', $fecha);
+                        });
+                }
+            )
+            ->whereHas(
+                'ventanilla',
+                fn (Builder $query) =>
+                    $query->where('estado', true)
+            )
+            ->whereHas(
+                'turno',
+                fn (Builder $query) =>
+                    $query->where('estado', true)
+            )
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Jornadas registradas hoy
+        |--------------------------------------------------------------------------
+        */
+
         $jornadasHoy = JornadaReceptor::query()
             ->whereIn('agencia_id', $agenciaIds)
             ->whereDate('fecha_operativa', $fecha)
@@ -61,11 +114,61 @@ class DashboardController extends Controller
                 'id',
                 'agencia_id',
                 'ventanilla_id',
+                'turno_id',
                 'receptor_usuario_id',
                 'estado',
             ]);
 
-        $totalJornadas = $jornadasHoy->count();
+        /*
+        |--------------------------------------------------------------------------
+        | Jornadas esperadas
+        |--------------------------------------------------------------------------
+        |
+        | Se consideran:
+        | 1. Jornadas ya registradas.
+        | 2. Asignaciones vigentes que aún no tienen jornada.
+        |
+        | Se evita contar dos veces una jornada generada.
+        |
+        */
+
+        $jornadasEsperadas = $jornadasHoy->map(
+            fn ($jornada) => [
+                'jornada_id' => (int) $jornada->id,
+                'agencia_id' => (int) $jornada->agencia_id,
+                'ventanilla_id' => (int) $jornada->ventanilla_id,
+                'turno_id' => (int) $jornada->turno_id,
+                'receptor_usuario_id' => (int) $jornada->receptor_usuario_id,
+            ]
+        );
+
+        foreach ($asignacionesOperativas as $operativa) {
+            $yaExiste = $jornadasEsperadas->contains(
+                fn (array $jornada) =>
+                    $jornada['agencia_id'] === (int) $operativa->agencia_id
+                    && $jornada['ventanilla_id'] === (int) $operativa->ventanilla_id
+                    && $jornada['turno_id'] === (int) $operativa->turno_id
+                    && $jornada['receptor_usuario_id'] === (int) $operativa->receptor_usuario_id
+            );
+
+            if (!$yaExiste) {
+                $jornadasEsperadas->push([
+                    'jornada_id' => null,
+                    'agencia_id' => (int) $operativa->agencia_id,
+                    'ventanilla_id' => (int) $operativa->ventanilla_id,
+                    'turno_id' => (int) $operativa->turno_id,
+                    'receptor_usuario_id' => (int) $operativa->receptor_usuario_id,
+                ]);
+            }
+        }
+
+        $totalJornadas = $jornadasEsperadas->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Arqueos del día
+        |--------------------------------------------------------------------------
+        */
 
         $arqueosHoy = ArqueoAgencia::query()
             ->whereIn('agencia_id', $agenciaIds)
@@ -90,16 +193,26 @@ class DashboardController extends Controller
                     && $arqueo->firmado_receptor_at !== null
             );
 
-        $jornadasCumplidas = $jornadasHoy
-            ->filter(function ($jornada) use (
+        /*
+        |--------------------------------------------------------------------------
+        | Cumplimiento de jornadas
+        |--------------------------------------------------------------------------
+        */
+
+        $jornadasCumplidas = $jornadasEsperadas
+            ->filter(function (array $jornada) use (
                 $arqueosOrdinariosValidos
-            ) {
+            ): bool {
+                if ($jornada['jornada_id'] === null) {
+                    return false;
+                }
+
                 return $arqueosOrdinariosValidos->contains(
                     fn ($arqueo) =>
                         (int) $arqueo->jornada_id ===
-                            (int) $jornada->id
+                            $jornada['jornada_id']
                         && (int) $arqueo->receptor_usuario_id ===
-                            (int) $jornada->receptor_usuario_id
+                            $jornada['receptor_usuario_id']
                 );
             })
             ->count();
@@ -115,6 +228,12 @@ class DashboardController extends Controller
                 1
             )
             : 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Indicadores de arqueos
+        |--------------------------------------------------------------------------
+        */
 
         $arqueosPendientesCertificacion =
             $arqueosOrdinariosValidos
@@ -142,6 +261,12 @@ class DashboardController extends Controller
                 )
                 ->count();
 
+        /*
+        |--------------------------------------------------------------------------
+        | Últimos arqueos
+        |--------------------------------------------------------------------------
+        */
+
         $ultimosArqueos = ArqueoAgencia::query()
             ->whereIn('agencia_id', $agenciaIds)
             ->whereDate('fecha_operativa', $fecha)
@@ -160,6 +285,12 @@ class DashboardController extends Controller
                 'total_arqueado',
                 'diferencia',
             ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
 
         return view('dashboards.jefe-agencia', [
             'fecha' => $fecha,

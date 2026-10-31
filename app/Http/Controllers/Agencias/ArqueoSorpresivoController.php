@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Agencias;
 use App\Http\Controllers\Controller;
 use App\Models\ArqueoAgencia;
 use App\Models\JornadaReceptor;
+use App\Models\Usuario;
 use App\Services\Agencias\AccesoAgenciaService;
 use App\Services\Agencias\FirmaArqueoService;
 use App\Services\AuditoriaService;
@@ -33,9 +34,58 @@ class ArqueoSorpresivoController extends Controller
     public function index(Request $request, AccesoAgenciaService $acceso): View
     {
         [$ids, $ruta] = $this->supervisor($request, $acceso);
-        $arqueos = ArqueoAgencia::whereIn('agencia_id', $ids)->where('tipo', 'SORPRESIVO')
-            ->latest('id')->paginate(20);
-        return view('agencias.sorpresivos.index', compact('arqueos', 'ruta'));
+
+        // Las fichas corresponden a asignaciones vigentes, incluso sin arqueos.
+        $asignaciones = DB::table('asignaciones_personal_agencia')
+            ->whereIn('agencia_id', $ids)
+            ->where('cargo', 'RECEPTOR')
+            ->where('estado', true)
+            ->whereDate('fecha_inicio', '<=', today()->toDateString())
+            ->where(function ($q) {
+                $q->whereNull('fecha_fin')
+                    ->orWhereDate('fecha_fin', '>=', today()->toDateString());
+            })
+            ->get(['agencia_id', 'usuario_id']);
+
+        $usuarios = Usuario::query()
+            ->whereIn('id', $asignaciones->pluck('usuario_id')->unique())
+            ->get()
+            ->keyBy('id');
+
+        // Se consultan los arqueos solo de las agencias autorizadas.
+        $historicos = ArqueoAgencia::query()
+            ->whereIn('agencia_id', $ids)
+            ->where('tipo', 'SORPRESIVO')
+            ->whereIn('receptor_usuario_id', $asignaciones->pluck('usuario_id')->unique())
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy(fn ($a) => $a->agencia_id.'-'.$a->receptor_usuario_id);
+
+        $receptores = $asignaciones
+            ->unique(fn ($a) => $a->agencia_id.'-'.$a->usuario_id)
+            ->map(function ($a) use ($usuarios, $historicos) {
+                $usuario = $usuarios->get($a->usuario_id);
+                if (! $usuario) {
+                    return null;
+                }
+
+                return (object) [
+                    'id' => (int) $a->usuario_id,
+                    'agencia_id' => (int) $a->agencia_id,
+                    'nombre' => $usuario->nombre_completo
+                        ?? $usuario->nombre
+                        ?? $usuario->nombre_usuario
+                        ?? 'Receptor #'.$a->usuario_id,
+                    'arqueos' => $historicos
+                        ->get($a->agencia_id.'-'.$a->usuario_id, collect())
+                        ->take(3),
+                ];
+            })
+            ->filter()
+            ->sortBy('nombre')
+            ->values();
+
+        return view('agencias.sorpresivos.index', compact('receptores', 'ruta'));
     }
 
     public function create(Request $request, AccesoAgenciaService $acceso): View

@@ -1,52 +1,313 @@
+
 @extends($rutaBase === 'jefecaja' ? 'layouts.jefe-caja' : 'layouts.subjefe-caja')
 
-@section('title', 'Programar Jornada')
-@section('module-title', 'Programar Jornada')
+@section('title', 'Nueva Asignación Operativa')
+@section('module-title', 'Gestión de Jornadas')
 
 @push('styles')
 <style>
-    .gjc-page{max-width:1050px;margin:0 auto;padding:24px 18px 48px;color:#183b5b}
-    .gjc-page *{box-sizing:border-box}
-    .gjc-heading{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:24px}
-    .gjc-heading h1{font-size:27px;font-weight:800;color:#0b345a;margin:0 0 7px}
-    .gjc-heading p{margin:0;color:#647d91;font-size:14px;line-height:1.6}
-    .gjc-back{color:#145c91;text-decoration:none;font-weight:750;font-size:13px}
-    .gjc-card{background:#fff;border:1px solid #dce6ef;border-radius:15px;box-shadow:0 8px 25px rgba(19,57,92,.05);overflow:hidden;margin-bottom:18px}
-    .gjc-card-title{padding:18px 22px;background:#f6f9fd;border-bottom:1px solid #e4edf4;color:#163f62;font-size:15px;font-weight:800}
-    .gjc-card-body{padding:23px}
-    .gjc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-    .gjc-field label{display:block;color:#274d6c;font-size:13px;font-weight:750;margin-bottom:8px}
-    .gjc-field select,.gjc-field input{width:100%;min-height:44px;border:1px solid #cbd9e5;border-radius:9px;padding:10px 12px;color:#173e5c;background:#fff;font:inherit;font-size:14px}
-    .gjc-field select:focus,.gjc-field input:focus{outline:2px solid #badbf4;outline-offset:1px;border-color:#3986bd}
-    .gjc-help{font-size:12px;line-height:1.55;color:#718397;margin-top:7px}
-    .gjc-error{color:#a82836;font-size:12px;font-weight:700;margin-top:7px}
-    .gjc-alert{padding:14px 17px;border:1px solid #edbdc1;background:#fff2f2;color:#8f2532;border-radius:10px;margin-bottom:20px;font-size:13px}
-    .gjc-alert ul{margin:8px 0 0;padding-left:20px}
-    .gjc-summary{background:#f4f9fd;border:1px solid #dce9f4;border-radius:11px;padding:16px 19px;font-size:13px;line-height:1.75;color:#315573}
-    .gjc-summary strong{color:#153f63}
-    .gjc-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin-top:22px}
-    .gjc-cancel{padding:12px 18px;color:#42627b;text-decoration:none;font-weight:750;font-size:13px}
-    .gjc-submit{background:#0b568f;border:1px solid #0b568f;color:#fff;padding:13px 22px;border-radius:10px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
-    .gjc-submit:hover{background:#08446f}
-    .gjc-submit:disabled{opacity:.55;cursor:not-allowed}
-    @media(max-width:650px){.gjc-page{padding:16px 10px 35px}.gjc-grid{grid-template-columns:1fr}.gjc-card-body{padding:17px}.gjc-heading h1{font-size:23px}}
+    .gja-page {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: grid;
+        gap: 22px;
+        color: #193552;
+    }
+
+    .gja-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+
+    .gja-header h2 {
+        margin: 0;
+        color: #10345b;
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+    .gja-header p {
+        margin: 8px 0 0;
+        color: #687e94;
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 780px;
+    }
+
+    .gja-card {
+        background: #fff;
+        border: 1px solid #dce5ef;
+        border-radius: 14px;
+        box-shadow: 0 5px 20px rgba(22, 48, 76, .045);
+        overflow: hidden;
+    }
+
+    .gja-card-header {
+        padding: 22px 25px;
+        border-bottom: 1px solid #e7edf4;
+    }
+
+    .gja-card-header h3 {
+        margin: 0;
+        font-size: 17px;
+        color: #173c64;
+        font-weight: 800;
+    }
+
+    .gja-card-header p {
+        margin: 7px 0 0;
+        color: #74869a;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .gja-form {
+        padding: 25px;
+    }
+
+    .gja-section-title {
+        font-size: 12px;
+        font-weight: 800;
+        color: #34638f;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        margin: 0 0 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e8eef5;
+    }
+
+    .gja-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .gja-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .gja-field-full {
+        grid-column: 1 / -1;
+    }
+
+    .gja-field label {
+        font-size: 13px;
+        font-weight: 800;
+        color: #344f6b;
+    }
+
+    .gja-required {
+        color: #bd3944;
+    }
+
+    .gja-field select,
+    .gja-field input {
+        width: 100%;
+        min-height: 45px;
+        padding: 10px 13px;
+        border: 1px solid #cbd9e7;
+        border-radius: 9px;
+        background: #fff;
+        color: #284663;
+        font: inherit;
+        font-size: 13px;
+    }
+
+    .gja-field select:focus,
+    .gja-field input:focus {
+        outline: none;
+        border-color: #3c84bf;
+        box-shadow: 0 0 0 3px rgba(60, 132, 191, .12);
+    }
+
+    .gja-field select:disabled {
+        background: #f2f5f8;
+        color: #8997a6;
+        cursor: not-allowed;
+    }
+
+    .gja-help {
+        color: #7a8b9d;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .gja-error {
+        color: #b63842;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .gja-info {
+        padding: 17px 20px;
+        background: #eff6fd;
+        border: 1px solid #cfe1f3;
+        border-radius: 10px;
+        color: #28547b;
+        font-size: 13px;
+        line-height: 1.75;
+    }
+
+    .gja-info strong {
+        color: #17436c;
+    }
+
+    .gja-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .gja-summary-item {
+        background: #f6f9fc;
+        border: 1px solid #e2eaf2;
+        border-radius: 9px;
+        padding: 15px;
+    }
+
+    .gja-summary-item span {
+        display: block;
+        font-size: 11px;
+        color: #75889c;
+        margin-bottom: 7px;
+    }
+
+    .gja-summary-item strong {
+        display: block;
+        color: #234b70;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .gja-actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+        padding-top: 22px;
+        border-top: 1px solid #e7edf4;
+    }
+
+    .gja-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 20px;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background: #14528c;
+        color: #fff !important;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .gja-btn:hover {
+        background: #0e3e6d;
+    }
+
+    .gja-btn-secondary {
+        background: #fff;
+        border-color: #d3dfeb;
+        color: #2a4b69 !important;
+    }
+
+    .gja-btn-secondary:hover {
+        background: #edf4fb;
+    }
+
+    .gja-alert-error {
+        background: #fff0f0;
+        border: 1px solid #efcaca;
+        color: #9c3434;
+        border-radius: 10px;
+        padding: 15px 20px;
+        font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+        .gja-grid,
+        .gja-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .gja-form {
+            padding: 18px;
+        }
+
+        .gja-header h2 {
+            font-size: 22px;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="gjc-page">
-    <div class="gjc-heading">
+@php
+    $fechaMinima = now()->toDateString();
+
+    $asignacionesDatos = $asignaciones->map(function ($asignacion) {
+        return [
+            'id' => (int) $asignacion->id,
+            'agencia_id' => (int) $asignacion->agencia_id,
+            'nombre' => $asignacion->usuario?->nombre_completo
+                ?? 'Usuario #' . $asignacion->usuario_id,
+            'fecha_inicio' => $asignacion->fecha_inicio?->format('Y-m-d'),
+            'fecha_fin' => $asignacion->fecha_fin?->format('Y-m-d'),
+        ];
+    })->values();
+
+    $ventanillasDatos = $ventanillas->map(function ($ventanilla) {
+        return [
+            'id' => (int) $ventanilla->id,
+            'agencia_id' => (int) $ventanilla->agencia_id,
+            'nombre' => $ventanilla->codigo
+                . ($ventanilla->descripcion ? ' - ' . $ventanilla->descripcion : ''),
+        ];
+    })->values();
+
+    $turnosDatos = $turnos->map(function ($turno) {
+        return [
+            'id' => (int) $turno->id,
+            'nombre' => $turno->nombre,
+            'inicio' => substr((string) $turno->hora_inicio, 0, 5),
+            'fin' => substr((string) $turno->hora_fin, 0, 5),
+            'cruza_medianoche' => (bool) $turno->cruza_medianoche,
+        ];
+    })->values();
+@endphp
+
+<div class="gja-page">
+
+    <div class="gja-header">
         <div>
-            <h1>Programar jornada</h1>
-            <p>Seleccione el receptor, la ventanilla y el turno para una agencia bajo su responsabilidad.</p>
+            <h2>Nueva asignación operativa</h2>
+            <p>
+                Asigne un receptor a una ventanilla y turno de trabajo.
+                La asignación tendrá vigencia indefinida y las jornadas
+                diarias se generarán automáticamente.
+            </p>
         </div>
-        <a class="gjc-back" href="{{ route($rutaBase.'.jornadas.index') }}">← Volver a jornadas</a>
+
+        <a href="{{ route($rutaBase . '.jornadas.index') }}"
+           class="gja-btn gja-btn-secondary">
+            Volver al listado
+        </a>
     </div>
 
     @if($errors->any())
-        <div class="gjc-alert" role="alert">
-            <strong>No fue posible registrar la jornada. Revise los datos:</strong>
-            <ul>
+        <div class="gja-alert-error">
+            <strong>Revise la información ingresada:</strong>
+            <ul style="margin: 8px 0 0; padding-left: 20px;">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -54,127 +315,309 @@
         </div>
     @endif
 
-    <form action="{{ route($rutaBase.'.jornadas.store') }}" method="POST" id="form-jornada">
-        @csrf
-        <section class="gjc-card">
-            <div class="gjc-card-title">Datos de la programación</div>
-            <div class="gjc-card-body">
-                <div class="gjc-grid">
-                    <div class="gjc-field">
-                        <label for="agencia_id">Agencia *</label>
-                        <select id="agencia_id" name="agencia_id" required>
-                            <option value="">Seleccione una agencia</option>
-                            @foreach($agencias as $agencia)
-                                <option value="{{ $agencia->id }}" @selected((string)old('agencia_id') === (string)$agencia->id)>{{ $agencia->nombre ?? $agencia->codigo ?? ('Agencia #'.$agencia->id) }}</option>
-                            @endforeach
-                        </select>
-                        @error('agencia_id')<div class="gjc-error">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="gjc-field">
-                        <label for="fecha_operativa">Fecha operativa *</label>
-                        <input type="date" id="fecha_operativa" name="fecha_operativa" min="{{ today()->toDateString() }}" value="{{ old('fecha_operativa', today()->toDateString()) }}" required>
-                        <div class="gjc-help">Solo se permiten jornadas de hoy o fechas futuras.</div>
-                        @error('fecha_operativa')<div class="gjc-error">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="gjc-field">
-                        <label for="asignacion_personal_id">Receptor *</label>
-                        <select id="asignacion_personal_id" name="asignacion_personal_id" required>
-                            <option value="">Seleccione primero una agencia</option>
-                            @foreach($asignaciones as $asignacion)
-                                <option value="{{ $asignacion->id }}" data-agencia="{{ $asignacion->agencia_id }}" data-inicio="{{ $asignacion->fecha_inicio?->format('Y-m-d') }}" data-fin="{{ $asignacion->fecha_fin?->format('Y-m-d') }}" @selected((string)old('asignacion_personal_id') === (string)$asignacion->id)>{{ $asignacion->usuario?->nombre_completo ?? ('Usuario #'.$asignacion->usuario_id) }} — {{ $asignacion->tipo }}</option>
-                            @endforeach
-                        </select>
-                        <div class="gjc-help">Solo se muestran asignaciones vigentes para la agencia y fecha elegidas.</div>
-                        @error('asignacion_personal_id')<div class="gjc-error">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="gjc-field">
-                        <label for="ventanilla_id">Ventanilla *</label>
-                        <select id="ventanilla_id" name="ventanilla_id" required>
-                            <option value="">Seleccione primero una agencia</option>
-                            @foreach($ventanillas as $ventanilla)
-                                <option value="{{ $ventanilla->id }}" data-agencia="{{ $ventanilla->agencia_id }}" @selected((string)old('ventanilla_id') === (string)$ventanilla->id)>{{ $ventanilla->codigo }}{{ $ventanilla->descripcion ? ' — '.$ventanilla->descripcion : '' }}</option>
-                            @endforeach
-                        </select>
-                        @error('ventanilla_id')<div class="gjc-error">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="gjc-field">
-                        <label for="turno_id">Turno *</label>
-                        <select id="turno_id" name="turno_id" required>
-                            <option value="">Seleccione un turno</option>
-                            @foreach($turnos as $turno)
-                                <option value="{{ $turno->id }}" data-nombre="{{ $turno->nombre }}" data-inicio="{{ substr((string)$turno->hora_inicio, 0, 5) }}" data-fin="{{ substr((string)$turno->hora_fin, 0, 5) }}" data-medianoche="{{ $turno->cruza_medianoche ? '1' : '0' }}" @selected((string)old('turno_id') === (string)$turno->id)>{{ $turno->nombre }} ({{ substr((string)$turno->hora_inicio, 0, 5) }} – {{ substr((string)$turno->hora_fin, 0, 5) }}{{ $turno->cruza_medianoche ? ', día siguiente' : '' }})</option>
-                            @endforeach
-                        </select>
-                        @error('turno_id')<div class="gjc-error">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div class="gja-card">
 
-        <section class="gjc-card">
-            <div class="gjc-card-title">Resumen de la jornada</div>
-            <div class="gjc-card-body">
-                <div class="gjc-summary" id="resumen-jornada" aria-live="polite">Complete los datos para visualizar el resumen de la programación.</div>
-                <div class="gjc-help" style="margin-top:12px">El sistema verificará nuevamente las asignaciones, la disponibilidad de la ventanilla y los posibles conflictos de horario antes de guardar.</div>
-                <div class="gjc-actions">
-                    <a class="gjc-cancel" href="{{ route($rutaBase.'.jornadas.index') }}">Cancelar</a>
-                    <button class="gjc-submit" type="submit">Guardar jornada</button>
+        <div class="gja-card-header">
+            <h3>Datos de la asignación</h3>
+            <p>
+                Todos los campos son obligatorios.
+                El sistema verificará que no existan horarios superpuestos.
+            </p>
+        </div>
+
+        <form method="POST"
+              action="{{ route($rutaBase . '.jornadas.store') }}"
+              class="gja-form"
+              id="formAsignacionOperativa">
+
+            @csrf
+
+            <h4 class="gja-section-title">Ubicación y receptor</h4>
+
+            <div class="gja-grid">
+
+                <div class="gja-field">
+                    <label for="agencia_id">
+                        Agencia <span class="gja-required">*</span>
+                    </label>
+
+                    <select name="agencia_id"
+                            id="agencia_id"
+                            required>
+                        <option value="">Seleccione una agencia</option>
+
+                        @foreach($agencias as $agencia)
+                            <option value="{{ $agencia->id }}"
+                                @selected(old('agencia_id') == $agencia->id)>
+                                {{ $agencia->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('agencia_id')
+                        <span class="gja-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="gja-field">
+                    <label for="asignacion_personal_id">
+                        Receptor <span class="gja-required">*</span>
+                    </label>
+
+                    <select name="asignacion_personal_id"
+                            id="asignacion_personal_id"
+                            required
+                            disabled>
+                        <option value="">Seleccione primero una agencia</option>
+                    </select>
+
+                    <span class="gja-help">
+                        Se muestran únicamente receptores con asignación
+                        de personal vigente para la fecha seleccionada.
+                    </span>
+
+                    @error('asignacion_personal_id')
+                        <span class="gja-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="gja-field">
+                    <label for="ventanilla_id">
+                        Ventanilla <span class="gja-required">*</span>
+                    </label>
+
+                    <select name="ventanilla_id"
+                            id="ventanilla_id"
+                            required
+                            disabled>
+                        <option value="">Seleccione primero una agencia</option>
+                    </select>
+
+                    @error('ventanilla_id')
+                        <span class="gja-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="gja-field">
+                    <label for="fecha_inicio">
+                        Inicio de vigencia <span class="gja-required">*</span>
+                    </label>
+
+                    <input type="date"
+                           name="fecha_inicio"
+                           id="fecha_inicio"
+                           min="{{ $fechaMinima }}"
+                           value="{{ old('fecha_inicio', $fechaMinima) }}"
+                           required>
+
+                    <span class="gja-help">
+                        La asignación continuará vigente hasta que
+                        el Jefe o Subjefe decida modificarla.
+                    </span>
+
+                    @error('fecha_inicio')
+                        <span class="gja-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+            </div>
+
+            <h4 class="gja-section-title" style="margin-top: 30px;">
+                Turno de trabajo
+            </h4>
+
+            <div class="gja-grid">
+
+                <div class="gja-field gja-field-full">
+                    <label for="turno_id">
+                        Turno <span class="gja-required">*</span>
+                    </label>
+
+                    <select name="turno_id"
+                            id="turno_id"
+                            required>
+                        <option value="">Seleccione un turno</option>
+
+                        @foreach($turnos as $turno)
+                            <option value="{{ $turno->id }}"
+                                @selected(old('turno_id') == $turno->id)>
+                                {{ $turno->nombre }}
+                                ({{ substr((string)$turno->hora_inicio, 0, 5) }}
+                                -
+                                {{ substr((string)$turno->hora_fin, 0, 5) }})
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('turno_id')
+                        <span class="gja-error">{{ $message }}</span>
+                    @enderror
+                </div>
+
+            </div>
+
+            <div class="gja-summary">
+                <div class="gja-summary-item">
+                    <span>Horario seleccionado</span>
+                    <strong id="resumenHorario">
+                        Seleccione un turno
+                    </strong>
+                </div>
+
+                <div class="gja-summary-item">
+                    <span>Tipo de vigencia</span>
+                    <strong>Indefinida</strong>
+                </div>
+
+                <div class="gja-summary-item">
+                    <span>Generación de jornadas</span>
+                    <strong>Automática, por fecha operativa</strong>
                 </div>
             </div>
-        </section>
-    </form>
+
+            <div class="gja-info" style="margin-top: 22px;">
+                <strong>Importante:</strong>
+                Un receptor puede tener varias asignaciones en diferentes
+                turnos, siempre que sus horarios no se superpongan.
+                Una misma ventanilla también puede utilizarse en
+                distintos turnos por diferentes receptores.
+                Las jornadas y arqueos históricos no se modificarán.
+            </div>
+
+            <div class="gja-actions">
+                <a href="{{ route($rutaBase . '.jornadas.index') }}"
+                   class="gja-btn gja-btn-secondary">
+                    Cancelar
+                </a>
+
+                <button type="submit" class="gja-btn">
+                    Guardar asignación
+                </button>
+            </div>
+
+        </form>
+    </div>
 </div>
-@endsection
 
-@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const agencia = document.getElementById('agencia_id');
-    const fecha = document.getElementById('fecha_operativa');
-    const receptor = document.getElementById('asignacion_personal_id');
-    const ventanilla = document.getElementById('ventanilla_id');
-    const turno = document.getElementById('turno_id');
-    const resumen = document.getElementById('resumen-jornada');
-    const opcionesReceptor = Array.from(receptor.options).filter(o => o.value);
-    const opcionesVentanilla = Array.from(ventanilla.options).filter(o => o.value);
+    'use strict';
 
-    function filtrar(select, opciones, vigente) {
-        const anterior = select.value;
-        opciones.forEach(o => {
-            o.hidden = !vigente(o);
-            o.disabled = !vigente(o);
-        });
-        if (!Array.from(select.options).some(o => o.value === anterior && !o.disabled)) select.value = '';
+    const asignaciones = @json($asignacionesDatos);
+    const ventanillas = @json($ventanillasDatos);
+    const turnos = @json($turnosDatos);
+
+    const agenciaSelect = document.getElementById('agencia_id');
+    const receptorSelect = document.getElementById('asignacion_personal_id');
+    const ventanillaSelect = document.getElementById('ventanilla_id');
+    const fechaInput = document.getElementById('fecha_inicio');
+    const turnoSelect = document.getElementById('turno_id');
+    const resumenHorario = document.getElementById('resumenHorario');
+
+    const valoresAnteriores = {
+        receptor: @json(old('asignacion_personal_id')),
+        ventanilla: @json(old('ventanilla_id'))
+    };
+
+    function agregarOpcion(select, valor, texto) {
+        const option = document.createElement('option');
+        option.value = String(valor);
+        option.textContent = texto;
+        select.appendChild(option);
     }
-    function actualizar() {
-        const idAgencia = agencia.value;
-        const dia = fecha.value;
-        filtrar(receptor, opcionesReceptor, o => o.dataset.agencia === idAgencia && dia && (!o.dataset.inicio || o.dataset.inicio <= dia) && (!o.dataset.fin || o.dataset.fin >= dia));
-        filtrar(ventanilla, opcionesVentanilla, o => o.dataset.agencia === idAgencia);
-        const agenciaNombre = agencia.selectedOptions[0]?.textContent || '';
-        const receptorNombre = receptor.selectedOptions[0]?.value ? receptor.selectedOptions[0].textContent : 'Sin seleccionar';
-        const ventanillaNombre = ventanilla.selectedOptions[0]?.value ? ventanilla.selectedOptions[0].textContent : 'Sin seleccionar';
-        const turnoOpcion = turno.selectedOptions[0];
-        const turnoNombre = turnoOpcion?.value ? turnoOpcion.textContent : 'Sin seleccionar';
-        resumen.innerHTML = '';
-        const datos = [
-            ['Agencia', idAgencia ? agenciaNombre : 'Sin seleccionar'],
-            ['Fecha operativa', dia || 'Sin seleccionar'],
-            ['Receptor', receptorNombre],
-            ['Ventanilla', ventanillaNombre],
-            ['Turno', turnoNombre]
-        ];
-        datos.forEach(([titulo, valor]) => {
-            const fila = document.createElement('div');
-            const negrita = document.createElement('strong');
-            negrita.textContent = titulo + ': ';
-            fila.appendChild(negrita);
-            fila.appendChild(document.createTextNode(valor));
-            resumen.appendChild(fila);
+
+    function actualizarReceptores() {
+        const agenciaId = Number(agenciaSelect.value);
+        const fecha = fechaInput.value;
+        const seleccionado = receptorSelect.value
+            || valoresAnteriores.receptor;
+
+        receptorSelect.innerHTML = '';
+        agregarOpcion(receptorSelect, '', 'Seleccione un receptor');
+
+        if (!agenciaId || !fecha) {
+            receptorSelect.disabled = true;
+            return;
+        }
+
+        const disponibles = asignaciones.filter(function (item) {
+            return item.agencia_id === agenciaId
+                && item.fecha_inicio
+                && item.fecha_inicio <= fecha
+                && (!item.fecha_fin || item.fecha_fin >= fecha);
         });
+
+        disponibles.forEach(function (item) {
+            agregarOpcion(receptorSelect, item.id, item.nombre);
+        });
+
+        receptorSelect.disabled = disponibles.length === 0;
+
+        if (disponibles.some(item => String(item.id) === String(seleccionado))) {
+            receptorSelect.value = String(seleccionado);
+        }
+
+        valoresAnteriores.receptor = null;
     }
-    [agencia, fecha, receptor, ventanilla, turno].forEach(el => el.addEventListener('change', actualizar));
-    actualizar();
+
+    function actualizarVentanillas() {
+        const agenciaId = Number(agenciaSelect.value);
+        const seleccionado = ventanillaSelect.value
+            || valoresAnteriores.ventanilla;
+
+        ventanillaSelect.innerHTML = '';
+        agregarOpcion(ventanillaSelect, '', 'Seleccione una ventanilla');
+
+        if (!agenciaId) {
+            ventanillaSelect.disabled = true;
+            return;
+        }
+
+        const disponibles = ventanillas.filter(function (item) {
+            return item.agencia_id === agenciaId;
+        });
+
+        disponibles.forEach(function (item) {
+            agregarOpcion(ventanillaSelect, item.id, item.nombre);
+        });
+
+        ventanillaSelect.disabled = disponibles.length === 0;
+
+        if (disponibles.some(item => String(item.id) === String(seleccionado))) {
+            ventanillaSelect.value = String(seleccionado);
+        }
+
+        valoresAnteriores.ventanilla = null;
+    }
+
+    function actualizarHorario() {
+        const turno = turnos.find(function (item) {
+            return item.id === Number(turnoSelect.value);
+        });
+
+        if (!turno) {
+            resumenHorario.textContent = 'Seleccione un turno';
+            return;
+        }
+
+        resumenHorario.textContent =
+            turno.inicio + ' - ' + turno.fin
+            + (turno.cruza_medianoche ? ' (día siguiente)' : '');
+    }
+
+    agenciaSelect.addEventListener('change', function () {
+        receptorSelect.value = '';
+        ventanillaSelect.value = '';
+        actualizarReceptores();
+        actualizarVentanillas();
+    });
+
+    fechaInput.addEventListener('change', actualizarReceptores);
+    turnoSelect.addEventListener('change', actualizarHorario);
+
+    actualizarReceptores();
+    actualizarVentanillas();
+    actualizarHorario();
 });
 </script>
-@endpush
+@endsection

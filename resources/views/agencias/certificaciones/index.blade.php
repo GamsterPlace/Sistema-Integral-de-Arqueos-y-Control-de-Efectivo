@@ -7,182 +7,211 @@
     )->first(fn ($nombre) => view()->exists($nombre));
 
     if (!$layout) {
-        throw new \RuntimeException(
-            'No se encontró el layout del rol. Verifique el nombre del archivo en resources/views/layouts.'
-        );
+        throw new \RuntimeException('No se encontró el layout del rol.');
     }
+
+    $pendientes = $pendientes ?? null;
+    $ventanillas = collect($ventanillas ?? []);
+
+    $moneda = fn ($valor) =>
+        'Q '.number_format((float) ($valor ?? 0), 2, '.', ',');
 @endphp
 
 @extends($layout)
 
-@section('title', 'Certificaciones de Arqueos')
+@section('title', 'Arqueos y Control de Certificaciones')
 
 @push('styles')
 <style>
-    .cert-page{display:grid;gap:22px}
-    .cert-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
-    .cert-header h1{margin:0;color:#06284f;font-size:28px;font-weight:800}
-    .cert-header p{margin:8px 0 0;color:#687e93;font-size:14px;line-height:1.6}
-    .cert-back{display:inline-flex;align-items:center;padding:10px 15px;border:1px solid #d8e5f2;border-radius:10px;background:#fff;color:#164c96;font-size:13px;font-weight:700;text-decoration:none}
-    .cert-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
-    .cert-stat{background:#fff;border:1px solid #dfe7ee;border-radius:15px;padding:20px;box-shadow:0 5px 18px rgba(6,40,79,.04)}
-    .cert-stat span{display:block;color:#718398;font-size:12px;font-weight:700}
-    .cert-stat strong{display:block;margin-top:10px;color:#06284f;font-size:29px}
-    .cert-stat.pending strong{color:#b07818}
-    .cert-stat.done strong{color:#15804b}
-    .cert-panel{background:#fff;border:1px solid #dfe7ee;border-radius:16px;padding:22px;box-shadow:0 5px 18px rgba(6,40,79,.04)}
-    .cert-panel h2{margin:0 0 7px;color:#06284f;font-size:18px}
-    .cert-panel p{color:#718398;font-size:13px;line-height:1.6}
-    .cert-table-wrap{overflow-x:auto;margin-top:20px}
-    .cert-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
-    .cert-table th{padding:13px 11px;background:#f3f7fb;color:#5b7187;font-weight:800;white-space:nowrap}
-    .cert-table td{padding:14px 11px;border-bottom:1px solid #eaf0f5;vertical-align:middle}
-    .cert-table tbody tr:hover{background:#fafcff}
-    .cert-table tbody tr:last-child td{border-bottom:0}
-    .cert-number{font-weight:800;color:#164c96}
-    .cert-secondary{display:block;margin-top:4px;color:#8292a2;font-size:11px}
-    .cert-money{font-weight:750;white-space:nowrap;color:#193b5c}
-    .cert-money.negative{color:#b64040}
-    .cert-money.positive{color:#b07818}
-    .cert-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
-    .cert-badge.pending{background:#fff3db;color:#996315}
-    .cert-badge.done{background:#e8f8ef;color:#147a47}
-    .cert-badge.other{background:#edf3fa;color:#526d88}
-    .cert-button{display:inline-flex;align-items:center;justify-content:center;background:#164c96;color:#fff;padding:9px 13px;border-radius:9px;text-decoration:none;font-size:12px;font-weight:750;white-space:nowrap}
-    .cert-button:hover{background:#0b3973;color:#fff}
-    .cert-empty{margin-top:20px;padding:35px 20px;text-align:center;border:1px dashed #d6e2ed;border-radius:12px;background:#f8fbfe}
-    .cert-empty strong{display:block;color:#28496a;font-size:15px}
-    .cert-empty p{margin-bottom:0}
-    .cert-pagination{margin-top:20px}
-    @media(max-width:850px){.cert-stats{grid-template-columns:1fr}}
-    @media(max-width:600px){.cert-header h1{font-size:24px}.cert-panel{padding:16px}}
+    .acc-page{display:grid;gap:23px;color:#193b5c}
+    .acc-page *{box-sizing:border-box}
+    .acc-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+    .acc-header h1{margin:0;color:#06284f;font-size:27px;font-weight:800}
+    .acc-header p{margin:8px 0 0;color:#6b8195;font-size:13px;line-height:1.6}
+    .acc-back{display:inline-flex;align-items:center;padding:11px 15px;border:1px solid #d7e3ed;border-radius:9px;background:#fff;color:#164c96;text-decoration:none;font-size:12px;font-weight:800}
+    .acc-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .acc-summary-item{background:#fff;border:1px solid #dfe7ee;border-radius:13px;padding:18px 20px}
+    .acc-summary-item span{display:block;color:#728599;font-size:12px;font-weight:700}
+    .acc-summary-item strong{display:block;margin-top:8px;color:#06284f;font-size:27px}
+    .acc-summary-item.pending strong{color:#a46b18}
+    .acc-panel{background:#fff;border:1px solid #dfe7ee;border-radius:14px;padding:22px;box-shadow:0 5px 18px rgba(6,40,79,.04)}
+    .acc-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+    .acc-panel-head h2{margin:0;color:#06284f;font-size:19px}
+    .acc-panel-head p{margin:6px 0 0;color:#728599;font-size:12px;line-height:1.6}
+    .acc-table-wrap{overflow-x:auto}
+    .acc-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}
+    .acc-table th{background:#f3f7fb;padding:12px 10px;color:#597187;font-size:11px;white-space:nowrap}
+    .acc-table td{padding:13px 10px;border-bottom:1px solid #e9eff5;vertical-align:middle}
+    .acc-table tbody tr:last-child td{border-bottom:0}
+    .acc-table tbody tr:hover{background:#fafcff}
+    .acc-number{font-weight:800;color:#164c96}
+    .acc-muted{display:block;color:#7b8da0;font-size:11px;margin-top:4px}
+    .acc-money{font-weight:800;white-space:nowrap}
+    .acc-money.negative{color:#ae3939}
+    .acc-money.positive{color:#a46b18}
+    .acc-tag{display:inline-block;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;background:#edf3fa;color:#526d88}
+    .acc-tag.pending{background:#fff2d9;color:#98600f}
+    .acc-tag.certified{background:#e7f6ed;color:#167344}
+    .acc-tag.cancelled{background:#fdecec;color:#a33838}
+    .acc-button{display:inline-flex;justify-content:center;align-items:center;padding:9px 13px;border-radius:8px;background:#164c96;color:#fff!important;text-decoration:none;font-size:11px;font-weight:800;white-space:nowrap}
+    .acc-button:hover{background:#0c3976}
+    .acc-button.secondary{background:#e9f2fb;color:#164c96!important}
+    .acc-empty{padding:25px 16px;border:1px dashed #d4e1ec;border-radius:10px;background:#f8fbfe;text-align:center;color:#718398;font-size:13px}
+    .acc-empty strong{display:block;color:#274966;margin-bottom:5px}
+    .acc-pagination{margin-top:18px}
+    .acc-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+    .acc-card{border:1px solid #dce6ee;border-radius:13px;background:#fff;overflow:hidden}
+    .acc-card-head{background:#f5f9fd;border-bottom:1px solid #e0eaf2;padding:17px 18px}
+    .acc-card-head h3{margin:0;color:#123f67;font-size:17px}
+    .acc-card-head p{margin:5px 0 0;color:#73879a;font-size:12px}
+    .acc-card-body{padding:17px 18px}
+    .acc-assignee{padding:12px 14px;background:#f3f8fc;border:1px solid #e1ebf3;border-radius:9px;margin-bottom:17px}
+    .acc-assignee span{display:block;color:#708498;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+    .acc-assignee strong{display:block;margin-top:5px;color:#153f66;font-size:14px;overflow-wrap:anywhere}
+    .acc-card-subtitle{margin:0 0 10px;color:#526d83;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    .acc-recent{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #edf1f5}
+    .acc-recent:last-child{border-bottom:0}
+    .acc-recent-main{min-width:0}
+    .acc-recent-main strong{display:block;color:#174b78;font-size:12px;overflow-wrap:anywhere}
+    .acc-recent-main small{display:block;margin-top:4px;color:#728599;font-size:11px;line-height:1.5}
+    .acc-card-footer{padding:0 18px 18px}
+    .acc-card-footer .acc-button{width:100%;padding:12px}
+    @media(max-width:900px){
+        .acc-cards{grid-template-columns:1fr}
+    }
+    @media(max-width:650px){
+        .acc-summary{grid-template-columns:1fr}
+        .acc-panel{padding:16px}
+        .acc-header h1{font-size:23px}
+    }
 </style>
 @endpush
 
 @section('content')
-@php
-    $pendientesPagina = $arqueos->getCollection()
-        ->where('estado', 'PENDIENTE')
-        ->count();
+<div class="acc-page">
 
-    $certificadosPagina = $arqueos->getCollection()
-        ->where('estado', 'CERTIFICADO')
-        ->count();
-@endphp
-
-<div class="cert-page">
-
-    <header class="cert-header">
+    <header class="acc-header">
         <div>
-            <h1>Certificaciones de Arqueos</h1>
+            <h1>Arqueos y Control de Certificaciones</h1>
             <p>
-                Supervise y certifique los arqueos ordinarios
-                correspondientes a las agencias bajo su responsabilidad.
+                Revisión de arqueos pendientes y seguimiento
+                por ventanilla de las agencias bajo su responsabilidad.
             </p>
         </div>
 
-        <a href="{{ route($rutaBase.'.dashboard') }}" class="cert-back">
+        <a class="acc-back" href="{{ route($rutaBase.'.dashboard') }}">
             ← Volver al Dashboard
         </a>
     </header>
 
-    <div class="cert-stats">
-        <div class="cert-stat">
-            <span>Arqueos registrados</span>
-            <strong>{{ $arqueos->total() }}</strong>
+    <div class="acc-summary">
+        <div class="acc-summary-item pending">
+            <span>Pendientes de certificación</span>
+            <strong>
+                {{ $pendientes ? $pendientes->total() : '—' }}
+            </strong>
         </div>
 
-        <div class="cert-stat pending">
-            <span>Arqueos Pendientes de Certificación</span>
-            <strong>{{ $pendientesPagina }}</strong>
+        <div class="acc-summary-item">
+            <span>Ventanillas supervisadas</span>
+            <strong>{{ $ventanillas->count() }}</strong>
         </div>
 
-        <div class="cert-stat done">
-            <span>Arqueos Certificados</span>
-            <strong>{{ $certificadosPagina }}</strong>
+        <div class="acc-summary-item">
+            <span>Últimos arqueos visibles</span>
+            <strong>
+                {{ $ventanillas->sum(
+                    fn ($v) => collect($v->ultimosArqueos ?? [])->count()
+                ) }}
+            </strong>
         </div>
     </div>
 
-    <section class="cert-panel">
-        <h2>Control de Certificaciones</h2>
-        <p>
-            Los arqueos pendientes se presentan primero.
-            Seleccione un registro para verificar sus importes,
-            denominaciones, observaciones y firmas electrónicas.
-        </p>
-
-        @if($arqueos->isEmpty())
-            <div class="cert-empty">
-                <strong>No hay arqueos disponibles</strong>
+    <section class="acc-panel">
+        <div class="acc-panel-head">
+            <div>
+                <h2>Arqueos pendientes de certificación</h2>
                 <p>
-                    No se encontraron arqueos ordinarios pendientes
-                    o certificados en sus agencias asignadas.
+                    Únicamente registros pendientes,
+                    ordenados para su revisión y firma electrónica.
                 </p>
             </div>
+        </div>
+
+        @if(!$pendientes)
+            <div class="acc-empty">
+                <strong>Consulta de pendientes no configurada</strong>
+                El controlador debe proporcionar la variable pendientes.
+            </div>
+        @elseif($pendientes->isEmpty())
+            <div class="acc-empty">
+                <strong>Sin arqueos pendientes</strong>
+                No existen arqueos pendientes de certificación
+                en las agencias autorizadas.
+            </div>
         @else
-            <div class="cert-table-wrap">
-                <table class="cert-table">
+            <div class="acc-table-wrap">
+                <table class="acc-table">
                     <thead>
                         <tr>
                             <th>Número</th>
                             <th>Fecha</th>
-                            <th>Agencia</th>
+                            <th>Agencia / Ventanilla</th>
                             <th>Receptor</th>
                             <th>Total arqueado</th>
                             <th>Diferencia</th>
-                            <th>Estado</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($arqueos as $arqueo)
+                        @foreach($pendientes as $arqueo)
+                            @php
+                                $diferencia = (float) ($arqueo->diferencia ?? 0);
+                            @endphp
+
                             <tr>
                                 <td>
-                                    <span class="cert-number">
+                                    <span class="acc-number">
                                         {{ $arqueo->numero_arqueo ?: '#'.$arqueo->id }}
                                     </span>
                                 </td>
 
                                 <td>
-                                    {{ $arqueo->fecha_operativa?->format('d/m/Y') ?? '—' }}
+                                    {{ $arqueo->fecha_operativa
+                                        ? \Illuminate\Support\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y')
+                                        : '—' }}
                                 </td>
 
                                 <td>
-                                    {{ $arqueo->agencia_nombre_historico ?: 'Agencia #'.$arqueo->agencia_id }}
-                                </td>
-
-                                <td>
-                                    {{ $arqueo->receptor_nombre_historico ?: ($arqueo->receptor?->nombre_completo ?? 'No disponible') }}
-                                </td>
-
-                                <td>
-                                    <span class="cert-money">
-                                        Q {{ number_format((float)$arqueo->total_arqueado, 2) }}
+                                    {{ $arqueo->agencia_nombre_historico ?: '—' }}
+                                    <span class="acc-muted">
+                                        Ventanilla
+                                        {{ $arqueo->ventanilla_codigo_historico ?: '—' }}
                                     </span>
                                 </td>
 
                                 <td>
-                                    @php
-                                        $diferencia = (float)$arqueo->diferencia;
-                                    @endphp
+                                    {{ $arqueo->receptor_nombre_historico ?: 'No disponible' }}
+                                </td>
 
-                                    <span class="cert-money {{ $diferencia < 0 ? 'negative' : ($diferencia > 0 ? 'positive' : '') }}">
-                                        Q {{ number_format($diferencia, 2) }}
+                                <td>
+                                    <span class="acc-money">
+                                        {{ $moneda($arqueo->total_arqueado) }}
                                     </span>
                                 </td>
 
                                 <td>
-                                    <span class="cert-badge {{ $arqueo->estado === 'PENDIENTE' ? 'pending' : ($arqueo->estado === 'CERTIFICADO' ? 'done' : 'other') }}">
-                                        {{ $arqueo->estado === 'PENDIENTE' ? 'Pendiente' : 'Certificado' }}
+                                    <span class="acc-money {{ $diferencia < 0 ? 'negative' : ($diferencia > 0 ? 'positive' : '') }}">
+                                        {{ $diferencia < 0 ? '-' : '' }}{{ $moneda(abs($diferencia)) }}
                                     </span>
                                 </td>
 
                                 <td>
                                     <a
+                                        class="acc-button"
                                         href="{{ route($rutaBase.'.certificaciones.show', $arqueo->id) }}"
-                                        class="cert-button"
                                     >
-                                        {{ $arqueo->estado === 'PENDIENTE' ? 'Revisar' : 'Consultar' }}
+                                        Revisar y certificar
                                     </a>
                                 </td>
                             </tr>
@@ -191,10 +220,136 @@
                 </table>
             </div>
 
-            <div class="cert-pagination">
-                {{ $arqueos->links() }}
+            <div class="acc-pagination">
+                {{ $pendientes->links() }}
             </div>
         @endif
+    </section>
+
+    <section class="acc-panel">
+        <div class="acc-panel-head">
+            <div>
+                <h2>Control de arqueos por ventanilla</h2>
+                <p>
+                    Receptor actualmente asignado, últimos tres arqueos
+                    y acceso al historial de cada ventanilla.
+                </p>
+            </div>
+        </div>
+
+        <div class="acc-cards">
+            @forelse($ventanillas as $ventanilla)
+                @php
+                    $receptorAsignado = $ventanilla->receptorAsignado ?? null;
+
+                    $nombreReceptor = $receptorAsignado
+                        ? (
+                            data_get($receptorAsignado, 'nombre_completo')
+                            ?: data_get($receptorAsignado, 'nombre')
+                            ?: data_get($receptorAsignado, 'usuario.nombre_completo')
+                            ?: data_get($receptorAsignado, 'usuario.nombre')
+                        )
+                        : null;
+
+                    $recientes = collect(
+                        $ventanilla->ultimosArqueos ?? []
+                    )->take(3);
+                @endphp
+
+                <article class="acc-card">
+                    <div class="acc-card-head">
+                        <h3>
+                            Ventanilla
+                            {{ $ventanilla->codigo ?? $ventanilla->id }}
+                        </h3>
+
+                        <p>
+                            {{ data_get($ventanilla, 'agencia.nombre')
+                                ?: ($ventanilla->agencia_nombre ?? 'Agencia no disponible') }}
+                        </p>
+                    </div>
+
+                    <div class="acc-card-body">
+                        <div class="acc-assignee">
+                            <span>Receptor asignado actualmente</span>
+                            <strong>
+                                {{ $nombreReceptor ?: 'Sin receptor asignado' }}
+                            </strong>
+                        </div>
+
+                        <h4 class="acc-card-subtitle">
+                            Últimos tres arqueos
+                        </h4>
+
+                        @forelse($recientes as $arqueo)
+                            <div class="acc-recent">
+                                <div class="acc-recent-main">
+                                    <strong>
+                                        {{ $arqueo->numero_arqueo ?: '#'.$arqueo->id }}
+                                    </strong>
+
+                                    <small>
+                                        {{ $arqueo->fecha_operativa
+                                            ? \Illuminate\Support\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y')
+                                            : '—' }}
+                                        ·
+                                        {{ $arqueo->receptor_nombre_historico
+                                            ?: 'Receptor no disponible' }}
+                                    </small>
+
+                                    <small>
+                                        {{ $moneda($arqueo->total_arqueado) }}
+                                        ·
+                                        <span class="acc-tag {{ $arqueo->estado === 'CERTIFICADO' ? 'certified' : ($arqueo->estado === 'PENDIENTE' ? 'pending' : 'cancelled') }}">
+                                            {{ $arqueo->estado }}
+                                        </span>
+                                    </small>
+                                </div>
+
+                                <a
+                                    class="acc-button secondary"
+                                    href="{{ route($rutaBase.'.certificaciones.show', $arqueo->id) }}"
+                                >
+                                    Consultar
+                                </a>
+                            </div>
+                        @empty
+                            <div class="acc-empty">
+                                No existen arqueos registrados
+                                en esta ventanilla.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <div class="acc-card-footer">
+                        @if(\Illuminate\Support\Facades\Route::has($rutaBase.'.certificaciones.historial'))
+                            <a
+                                class="acc-button"
+                                href="{{ route(
+                                    $rutaBase.'.certificaciones.historial',
+                                    ['ventanilla' => $ventanilla->id]
+                                ) }}"
+                            >
+                                Historial de arqueos
+                            </a>
+                        @else
+                            <span
+                                class="acc-button secondary"
+                                style="cursor:not-allowed;opacity:.65"
+                            >
+                                Historial pendiente de configurar
+                            </span>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <div class="acc-empty">
+                    <strong>Sin ventanillas disponibles</strong>
+                    No hay ventanillas cargadas para las agencias
+                    bajo su responsabilidad.
+                </div>
+            @endforelse
+        </div>
     </section>
 </div>
 @endsection

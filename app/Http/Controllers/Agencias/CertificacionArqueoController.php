@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Agencias;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArqueoAgencia;
+use App\Models\VentanillaAgencia;
+use App\Models\Usuario;
 use App\Models\AsignacionPersonalAgencia;
 use App\Services\Agencias\FirmaArqueoService;
 use App\Services\AuditoriaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -94,26 +97,121 @@ class CertificacionArqueoController extends Controller
     {
         $agencias = $this->agenciasAutorizadas($request);
 
-        $arqueos = ArqueoAgencia::query()
-            ->with([
-                'agencia',
-                'ventanilla',
-                'receptor',
-            ])
+        $pendientes = ArqueoAgencia::query()
+            ->with(['agencia', 'ventanilla', 'receptor'])
             ->whereIn('agencia_id', $agencias)
             ->where('tipo', 'ORDINARIO')
-            ->whereIn('estado', [
-                'PENDIENTE',
-                'CERTIFICADO',
-            ])
-            ->orderByRaw(
-                "CASE WHEN estado = 'PENDIENTE' THEN 0 ELSE 1 END"
-            )
+            ->where('estado', 'PENDIENTE')
+            ->orderBy('fecha_operativa')
+            ->orderBy('id')
+            ->paginate(20, ['*'], 'pendientes_page')
+            ->withQueryString();
+
+        $ventanillas = VentanillaAgencia::query()
+            ->with('agencia')
+            ->whereIn('agencia_id', $agencias)
+            ->orderBy('agencia_id')
+            ->orderBy('codigo')
+            ->get();
+
+        // Se recuperan los últimos tres arqueos de cada ventanilla,
+        // sin confundir el receptor histórico con el actualmente asignado.
+        foreach ($ventanillas as $ventanilla) {
+            $ventanilla->setRelation('ultimosArqueos', ArqueoAgencia::query()
+                ->where('agencia_id', $ventanilla->agencia_id)
+                ->where('ventanilla_id', $ventanilla->id)
+                ->where('tipo', 'ORDINARIO')
+                ->orderByDesc('fecha_operativa')
+                ->orderByDesc('id')
+                ->limit(3)
+                ->get());
+
+            $ventanilla->setRelation(
+                'receptorAsignado',
+                $this->receptorActualVentanilla($ventanilla)
+            );
+        }
+
+        return view('agencias.certificaciones.index', [
+            'pendientes' => $pendientes,
+            'ventanillas' => $ventanillas,
+            'rutaBase' => $this->rutaBase($request),
+        ]);
+    }
+
+    /**
+     * Resuelve el receptor asignado por una jornada de la fecha actual.
+     * Si no existe jornada vigente, no atribuye la asignación a un receptor
+     * basándose en arqueos antiguos.
+     */
+    private function receptorActualVentanilla(VentanillaAgencia $ventanilla): ?Usuario
+    {
+        if (!Schema::hasTable('jornadas_receptor')) {
+            return null;
+        }
+
+        $tabla = 'jornadas_receptor';
+        if (!Schema::hasColumn($tabla, 'ventanilla_id')
+            || !Schema::hasColumn($tabla, 'fecha_operativa')) {
+            return null;
+        }
+
+        $campoUsuario = null;
+        foreach (['receptor_usuario_id', 'usuario_id'] as $campo) {
+            if (Schema::hasColumn($tabla, $campo)) {
+                $campoUsuario = $campo;
+                break;
+            }
+        }
+        if (!$campoUsuario) {
+            return null;
+        }
+
+        $idUsuario = DB::table($tabla)
+            ->where('ventanilla_id', $ventanilla->id)
+            ->whereDate('fecha_operativa', today()->toDateString())
+            ->orderByDesc('id')
+            ->value($campoUsuario);
+
+        return $idUsuario ? Usuario::query()->find($idUsuario) : null;
+    }
+
+    public function historial(Request $request, int $ventanilla): View
+    {
+        $datos = $request->validate([
+            'fecha' => ['nullable', 'date'],
+            'desde' => ['nullable', 'date'],
+            'hasta' => ['nullable', 'date', 'after_or_equal:desde'],
+        ]);
+
+        $registroVentanilla = VentanillaAgencia::query()
+            ->with('agencia')
+            ->whereIn('agencia_id', $this->agenciasAutorizadas($request))
+            ->findOrFail($ventanilla);
+
+        $consulta = ArqueoAgencia::query()
+            ->where('agencia_id', $registroVentanilla->agencia_id)
+            ->where('ventanilla_id', $registroVentanilla->id)
+            ->where('tipo', 'ORDINARIO');
+
+        if (!empty($datos['fecha'])) {
+            $consulta->whereDate('fecha_operativa', $datos['fecha']);
+        } else {
+            if (!empty($datos['desde'])) {
+                $consulta->whereDate('fecha_operativa', '>=', $datos['desde']);
+            }
+            if (!empty($datos['hasta'])) {
+                $consulta->whereDate('fecha_operativa', '<=', $datos['hasta']);
+            }
+        }
+
+        $arqueos = $consulta->orderByDesc('fecha_operativa')
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
 
-        return view('agencias.certificaciones.index', [
+        return view('agencias.certificaciones.historial', [
+            'ventanilla' => $registroVentanilla,
             'arqueos' => $arqueos,
             'rutaBase' => $this->rutaBase($request),
         ]);
