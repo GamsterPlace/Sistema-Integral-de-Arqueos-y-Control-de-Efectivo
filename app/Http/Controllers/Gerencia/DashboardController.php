@@ -127,6 +127,80 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
 
+        $fechaAgencias = today()->toDateString();
+        $arqueosVigentes = DB::table('arqueos_agencia')
+            ->where('estado', '!=', 'ANULADO');
+        $arqueosAgenciasHoy = (clone $arqueosVigentes)
+            ->whereDate('fecha_operativa', $fechaAgencias);
+
+        $indicadoresAgencias = [
+            'agencias' => DB::table('agencias')->where('estado', true)->count(),
+            'ventanillas' => DB::table('ventanillas_agencia')->where('estado', true)->count(),
+            'arqueos_hoy' => (clone $arqueosAgenciasHoy)->count(),
+            'certificados_hoy' => (clone $arqueosAgenciasHoy)->whereNotNull('certificado_at')->count(),
+            'pendientes_hoy' => (clone $arqueosAgenciasHoy)->whereNull('certificado_at')->count(),
+            'faltantes_hoy' => (clone $arqueosAgenciasHoy)->whereNotNull('certificado_at')->where('diferencia', '<', 0)->count(),
+            'sobrantes_hoy' => (clone $arqueosAgenciasHoy)->whereNotNull('certificado_at')->where('diferencia', '>', 0)->count(),
+            'anulados_hoy' => DB::table('arqueos_agencia')->whereDate('fecha_operativa', $fechaAgencias)->where('estado', 'ANULADO')->count(),
+        ];
+
+        $resumenAgencias = DB::table('agencias as a')
+            ->leftJoin('arqueos_agencia as arq', function ($join) use ($fechaAgencias): void {
+                $join->on('arq.agencia_id', '=', 'a.id')
+                    ->whereDate('arq.fecha_operativa', '=', $fechaAgencias);
+            })
+            ->select('a.id', 'a.codigo', 'a.nombre', 'a.estado')
+            ->selectRaw('COUNT(arq.id) as total_hoy')
+            ->selectRaw("SUM(CASE WHEN arq.estado != 'ANULADO' AND arq.certificado_at IS NOT NULL THEN 1 ELSE 0 END) as certificados_hoy")
+            ->selectRaw("SUM(CASE WHEN arq.estado != 'ANULADO' AND arq.certificado_at IS NULL THEN 1 ELSE 0 END) as pendientes_hoy")
+            ->selectRaw("SUM(CASE WHEN arq.estado != 'ANULADO' AND arq.certificado_at IS NOT NULL AND arq.diferencia < 0 THEN 1 ELSE 0 END) as faltantes_hoy")
+            ->selectRaw("SUM(CASE WHEN arq.estado != 'ANULADO' AND arq.certificado_at IS NOT NULL AND arq.diferencia > 0 THEN 1 ELSE 0 END) as sobrantes_hoy")
+            ->groupBy('a.id', 'a.codigo', 'a.nombre', 'a.estado')
+            ->orderBy('a.nombre')
+            ->get();
+
+        // Cumplimiento por turno exigible: asignaciones operativas vigentes cuyo turno
+        // ya finalizó en la fecha consultada. No confundir arqueos con agencias.
+        foreach ($resumenAgencias as $agencia) {
+            $turnosExigibles = DB::table('asignaciones_operativas_receptor as ao')
+                ->join('turnos_agencia as t', 't.id', '=', 'ao.turno_id')
+                ->where('ao.agencia_id', $agencia->id)
+                ->where('ao.estado', true)
+                ->where('t.estado', true)
+                ->whereDate('ao.fecha_inicio', '<=', $fechaAgencias)
+                ->where(function ($query) use ($fechaAgencias) {
+                    $query->whereNull('ao.fecha_fin')
+                        ->orWhereDate('ao.fecha_fin', '>=', $fechaAgencias);
+                })
+                ->where('t.cruza_medianoche', false)
+                ->where('t.hora_fin', '<=', now()->format('H:i:s'));
+
+            $agencia->arqueos_esperados = (clone $turnosExigibles)->count();
+            $agencia->arqueos_cumplidos = (clone $turnosExigibles)
+                ->whereExists(function ($query) use ($fechaAgencias) {
+                    $query->selectRaw('1')
+                        ->from('jornadas_receptor as j')
+                        ->join('arqueos_agencia as arq', 'arq.jornada_id', '=', 'j.id')
+                        ->whereColumn('j.receptor_usuario_id', 'ao.receptor_usuario_id')
+                        ->whereColumn('j.agencia_id', 'ao.agencia_id')
+                        ->whereColumn('j.ventanilla_id', 'ao.ventanilla_id')
+                        ->whereColumn('j.turno_id', 'ao.turno_id')
+                        ->whereDate('j.fecha_operativa', $fechaAgencias)
+                        ->whereDate('arq.fecha_operativa', $fechaAgencias)
+                        ->where('arq.tipo', 'ORDINARIO')
+                        ->where('arq.estado', '!=', 'ANULADO');
+                })->count();
+        }
+
+        $ultimosArqueosAgencias = DB::table('arqueos_agencia')
+            ->select('id', 'numero_arqueo', 'fecha_operativa', 'agencia_nombre_historico',
+                'receptor_nombre_historico', 'tipo', 'estado', 'diferencia', 'certificado_at')
+            ->orderByDesc('fecha_operativa')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get();
+
+
         return view('gerencia.dashboard', compact(
             'totalAgentes',
             'agentesActivos',
@@ -141,7 +215,11 @@ class DashboardController extends Controller
             'anuladosHoy',
             'extemporaneosHoy',
             'cumplimiento',
-            'ultimosArqueos'
+            'ultimosArqueos',
+            'fechaAgencias',
+            'indicadoresAgencias',
+            'resumenAgencias',
+            'ultimosArqueosAgencias'
         ));
     }
 

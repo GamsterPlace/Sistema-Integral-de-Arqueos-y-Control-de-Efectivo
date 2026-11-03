@@ -1011,6 +1011,31 @@ Route::middleware([
             )->name('perfil.index');
 
 
+            Route::get(
+                '/agencias/arqueos',
+                [\App\Http\Controllers\Gerencia\ConsultaArqueosAgenciaController::class, 'historial']
+            )->name('agencias.arqueos.index');
+
+            Route::get(
+                '/agencias/receptores',
+                [\App\Http\Controllers\Gerencia\ConsultaArqueosAgenciaController::class, 'receptores']
+            )->name('agencias.receptores.index');
+
+            Route::get(
+                '/agencias/receptores/{receptor}',
+                [\App\Http\Controllers\Gerencia\ConsultaArqueosAgenciaController::class, 'receptor']
+            )->whereNumber('receptor')->name('agencias.receptores.show');
+
+            Route::get(
+                '/agencias/arqueos/{arqueo}',
+                [\App\Http\Controllers\Gerencia\ConsultaArqueosAgenciaController::class, 'show']
+            )->whereNumber('arqueo')->name('agencias.arqueos.show');
+
+            Route::get(
+                '/agencias/arqueos/{arqueo}/imprimir',
+                [\App\Http\Controllers\Gerencia\ConsultaArqueosAgenciaController::class, 'imprimir']
+            )->whereNumber('arqueo')->name('agencias.arqueos.imprimir');
+
 
 
 

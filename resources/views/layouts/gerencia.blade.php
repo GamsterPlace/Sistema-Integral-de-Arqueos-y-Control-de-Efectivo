@@ -870,6 +870,24 @@
                 </a>
             </div>
 
+            <p class="navigation-label">Agencias ECOSABA</p>
+            <div class="navigation-list">
+                <a href="{{ route('gerencia.dashboard') }}#supervision-agencias" class="navigation-link">
+                    <span class="navigation-icon">▦</span> Supervisión de Agencias
+                </a>
+                <a href="{{ route('gerencia.agencias.arqueos.index') }}" class="navigation-link {{ request()->routeIs('gerencia.agencias.arqueos.index', 'gerencia.agencias.arqueos.show', 'gerencia.agencias.arqueos.imprimir') ? 'active' : '' }}">
+                    <span class="navigation-icon">▤</span> Historial de arqueos
+                </a>
+                <a href="{{ route('gerencia.agencias.receptores.index') }}"
+                class="navigation-link {{ request()->routeIs('gerencia.agencias.receptores.*') ? 'active' : '' }}">
+                    <span class="navigation-icon">♙</span>
+                    Historial por receptor
+                </a>
+                <a href="{{ route('agencias.reportes.index') }}" class="navigation-link {{ request()->routeIs('agencias.reportes.*') ? 'active' : '' }}">
+                    <span class="navigation-icon">▤</span> Reportes de Agencias
+                </a>
+            </div>
+
             <p class="navigation-label">Cuenta</p>
 
             <div class="navigation-list">
@@ -947,7 +965,7 @@
 
                 <div class="topbar-title">
                     <h1>@yield('module-title', 'Gerencia')</h1>
-                    <p>Sistema de Arqueos para Agentes MICOOPE</p>
+                    <p>Sistema Integral de Arqueos</p>
                 </div>
             </div>
 
