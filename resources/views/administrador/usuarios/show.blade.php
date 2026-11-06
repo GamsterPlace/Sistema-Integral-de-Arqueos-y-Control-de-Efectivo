@@ -41,6 +41,21 @@
     .password-toggle{position:absolute;right:5px;top:5px;width:33px;height:33px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:#718696;cursor:pointer}.password-toggle:hover{background:#f0f4f7;color:var(--azul-principal)}.password-toggle svg{width:16px;height:16px}
     .password-submit{width:100%;margin-top:4px}
     .security-foot{margin-top:13px;padding-top:12px;border-top:1px solid #edf1f4;color:#8a99a5;font-size:8.8px;line-height:1.5}
+
+    .assignments-panel{margin-top:18px}
+    .assignments-table-wrap{overflow-x:auto}
+    .assignments-table{width:100%;min-width:760px;border-collapse:collapse}
+    .assignments-table th,.assignments-table td{padding:13px 15px;text-align:left;border-bottom:1px solid #edf1f4;font-size:11px;color:#40596c;vertical-align:middle}
+    .assignments-table th{font-size:9px;letter-spacing:.025em;text-transform:uppercase;background:#f7f9fb;color:#687b8b}
+    .assignments-table tbody tr:last-child td{border-bottom:0}
+    .assignment-primary{display:block;font-weight:800;color:#173c5c}
+    .assignment-secondary{display:block;margin-top:3px;font-size:9px;color:#8495a3}
+    .assignment-tag{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:9px;font-weight:800;background:#edf4fb;color:#315f86;border:1px solid #d5e4f0}
+    .assignment-tag.current{background:#e9f8f0;color:#08783d;border-color:#c7ecd8}
+    .assignment-tag.past{background:#f0f2f5;color:#687b8b;border-color:#dfe5e9}
+    .assignment-tag.future{background:#fff7df;color:#8b6500;border-color:#f0e2ae}
+    .assignment-empty{padding:25px 18px;text-align:center;color:#7b8d9b;font-size:11px}
+    .assignment-description{padding:12px 18px;background:#fbfcfd;border-top:1px solid #edf1f4;font-size:10px;line-height:1.6;color:#718396}
     @media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
     @media(max-width:700px){.info-list{grid-template-columns:1fr}.profile-banner{align-items:flex-start;flex-wrap:wrap}.header-actions{width:100%;flex-direction:column}.header-actions .btn{width:100%}}
 </style>
@@ -212,6 +227,82 @@
             </div>
         </section>
     </div>
+
+    @if($asignaciones->isNotEmpty() || in_array(strtoupper(trim($usuario->rol_nombre)), ['RECEPTOR', 'JEFECAJA', 'SUBJEFECAJA', 'JEFEAGENCIA'], true))
+        <section class="panel assignments-panel">
+            <header class="panel-header">
+                <div class="panel-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                        <path d="M8 21V10h8v11M3 10h18"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3>Asignaciones a Agencias ECOSABA</h3>
+                    <p>Historial institucional de agencias y cargos del colaborador.</p>
+                </div>
+            </header>
+
+            @if($asignaciones->isEmpty())
+                <div class="assignment-empty">Este usuario todavía no tiene asignaciones registradas a agencias.</div>
+            @else
+                <div class="assignments-table-wrap">
+                    <table class="assignments-table">
+                        <thead>
+                            <tr>
+                                <th>Agencia</th>
+                                <th>Cargo</th>
+                                <th>Tipo</th>
+                                <th>Período</th>
+                                <th>Situación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($asignaciones as $asignacion)
+                                @php
+                                    $hoy = now()->toDateString();
+                                    $habilitada = (bool) $asignacion->estado;
+                                    $esFutura = $habilitada && $asignacion->fecha_inicio > $hoy;
+                                    $esVencida = $habilitada && $asignacion->fecha_fin !== null && $asignacion->fecha_fin < $hoy;
+                                    $esVigente = $habilitada && !$esFutura && !$esVencida;
+                                    $situacion = !$habilitada ? 'Inactiva' : ($esFutura ? 'Programada' : ($esVencida ? 'Finalizada' : 'Vigente'));
+                                    $claseSituacion = $esVigente ? 'current' : ($esFutura ? 'future' : 'past');
+                                    $nombreCargo = match($asignacion->cargo) {
+                                        'RECEPTOR' => 'Receptor',
+                                        'JEFE_CAJA' => 'Jefe de Caja',
+                                        'SUBJEFE_CAJA' => 'Subjefe de Caja',
+                                        'JEFE_AGENCIA' => 'Jefe de Agencia',
+                                        default => $asignacion->cargo,
+                                    };
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <span class="assignment-primary">{{ $asignacion->agencia_nombre }}</span>
+                                        <span class="assignment-secondary">{{ $asignacion->agencia_codigo }}</span>
+                                    </td>
+                                    <td>{{ $nombreCargo }}</td>
+                                    <td><span class="assignment-tag">{{ $asignacion->tipo === 'TEMPORAL' ? 'Temporal' : 'Permanente' }}</span></td>
+                                    <td>
+                                        <span class="assignment-primary">{{ \Illuminate\Support\Carbon::parse($asignacion->fecha_inicio)->format('d/m/Y') }}</span>
+                                        <span class="assignment-secondary">Hasta: {{ $asignacion->fecha_fin ? \Illuminate\Support\Carbon::parse($asignacion->fecha_fin)->format('d/m/Y') : 'Sin fecha de finalización' }}</span>
+                                    </td>
+                                    <td><span class="assignment-tag {{ $claseSituacion }}">{{ $situacion }}</span></td>
+                                </tr>
+                                @if(filled($asignacion->motivo))
+                                    <tr>
+                                        <td colspan="5"><span class="assignment-secondary"><strong>Motivo / observaciones:</strong> {{ $asignacion->motivo }}</span></td>
+                                    </tr>
+                                @endif
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+            <div class="assignment-description">
+                Las asignaciones anteriores se conservan como historial. La vigencia se determina por el estado registrado y las fechas de inicio y finalización; no implica que se haya generado una jornada o un arqueo.
+            </div>
+        </section>
+    @endif
 </div>
 @endsection
 

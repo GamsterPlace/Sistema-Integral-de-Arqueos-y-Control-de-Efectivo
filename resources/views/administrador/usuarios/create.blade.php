@@ -1,3 +1,4 @@
+
 @extends('layouts.administrador')
 
 @section('title', 'Crear Usuario')
@@ -5,239 +6,1000 @@
 
 @push('styles')
 <style>
-    .user-form-page{max-width:1120px;margin:0 auto}
-    .form-heading{display:flex;align-items:center;gap:15px}
-    .heading-icon{width:54px;height:54px;flex:0 0 54px;display:flex;align-items:center;justify-content:center;border-radius:16px;color:#fff;background:linear-gradient(145deg,var(--azul-principal),var(--azul-profundo));box-shadow:0 10px 24px rgba(22,76,150,.18)}
-    .heading-icon svg,.section-icon svg,.btn svg,.error-icon svg,.password-toggle svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    .heading-icon svg{width:26px;height:26px}
-    .errors{display:flex;gap:12px;margin-bottom:18px;padding:14px 16px;border:1px solid #efc5c5;border-radius:14px;background:#fff8f8;color:#a13b3b}
-    .error-icon{width:34px;height:34px;flex:0 0 34px;display:flex;align-items:center;justify-content:center;border-radius:9px;background:#ffe8e8}
-    .error-icon svg{width:17px;height:17px}
-    .errors strong{display:block;margin-bottom:4px;font-size:12px}.errors ul{margin:0;padding-left:17px;font-size:11px;line-height:1.6}
-    .form-card{overflow:hidden;border:1px solid #dfe7ee;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(20,57,83,.05)}
-    .form-intro{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;border-bottom:1px solid #e5edf2;background:linear-gradient(105deg,rgba(22,76,150,.05),rgba(0,166,81,.025)),#fff}
-    .form-intro:before{content:"";position:absolute;left:0;top:0;width:5px;height:100%;background:var(--verde-principal)}
-    .form-intro strong{display:block;color:var(--azul-profundo);font-size:14px}.form-intro span{display:block;margin-top:3px;color:var(--texto-secundario);font-size:11px}
-    .account-badge{padding:7px 11px;border:1px solid #d5e4f0;border-radius:999px;background:#edf4fb;color:var(--azul-principal);font-size:9.5px;font-weight:800;text-transform:uppercase;white-space:nowrap}
-    .form-section{padding:20px;border-bottom:1px solid #edf1f4}.form-section:last-of-type{border-bottom:0}
-    .section-title{display:flex;align-items:center;gap:11px;margin-bottom:17px}
-    .section-icon{width:38px;height:38px;flex:0 0 38px;display:flex;align-items:center;justify-content:center;border-radius:11px;color:var(--azul-principal);background:#edf4fb}
-    .section-icon.security{color:var(--verde-oscuro);background:#eaf8f1}
-    .section-icon svg{width:18px;height:18px}
-    .section-title h3{margin:0;color:var(--azul-profundo);font-size:15px}.section-title p{margin:3px 0 0;color:var(--texto-secundario);font-size:11px}
-    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
-    .field label{display:block;margin-bottom:7px;color:#536c7f;font-size:10px;font-weight:800;letter-spacing:.025em;text-transform:uppercase}
-    .required{color:#b13b3b}
-    .field input,.field select{width:100%;min-height:44px;padding:0 12px;border:1px solid #ced9e1;border-radius:10px;outline:none;background:#fff;color:#30485b;font:inherit;font-size:12px;box-sizing:border-box;transition:.18s ease}
-    .field input:focus,.field select:focus{border-color:#82a9cc;box-shadow:0 0 0 3px rgba(22,76,150,.08)}
-    .field-help{display:block;margin-top:6px;color:#8a99a5;font-size:9.5px;line-height:1.4}
-    .password-wrap{position:relative}.password-wrap input{padding-right:44px}
-    .password-toggle{position:absolute;right:5px;top:5px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:#718696;cursor:pointer}
-    .password-toggle:hover{background:#f0f4f7;color:var(--azul-principal)}
-    .password-toggle svg{width:17px;height:17px}
-    .form-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:17px 20px;background:#fbfcfd}
-    .footer-note{color:#7c8d99;font-size:10px}.actions{display:flex;justify-content:flex-end;gap:10px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:41px;padding:0 15px;border:0;border-radius:10px;font-size:10.5px;font-weight:800;text-decoration:none;cursor:pointer;transition:.2s ease}
-    .btn svg{width:16px;height:16px}.primary{background:var(--azul-principal);color:#fff}.primary:hover{background:var(--azul-secundario);color:#fff;box-shadow:0 7px 16px rgba(22,76,150,.16)}.secondary{background:#edf2f5;color:#3d596f}.secondary:hover{background:#e3eaf0;color:#29485f}
-    @media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-intro,.form-footer{align-items:flex-start;flex-direction:column}.actions{width:100%;flex-direction:column}.btn{width:100%}}
+    .user-form-page {
+        max-width: 1120px;
+        margin: 0 auto;
+    }
+
+    .user-form-page * {
+        box-sizing: border-box;
+    }
+
+    .user-heading {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 24px;
+    }
+
+    .user-heading-icon {
+        width: 54px;
+        height: 54px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        background: linear-gradient(
+            145deg,
+            var(--azul-principal),
+            var(--azul-profundo)
+        );
+        color: #fff;
+    }
+
+    .user-heading-icon svg {
+        width: 27px;
+        height: 27px;
+    }
+
+    .user-heading h2 {
+        margin: 0 0 5px;
+        font-size: 24px;
+        color: var(--azul-profundo);
+    }
+
+    .user-heading p {
+        margin: 0;
+        color: #718396;
+        font-size: 12px;
+    }
+
+    .user-form-card {
+        background: #fff;
+        border: 1px solid #dfe7ee;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(20,57,83,.05);
+    }
+
+    .user-form-intro {
+        padding: 20px 24px;
+        background: linear-gradient(
+            105deg,
+            rgba(22,76,150,.06),
+            rgba(0,166,81,.03)
+        );
+        border-bottom: 1px solid #e5edf2;
+        border-left: 5px solid var(--verde-principal);
+    }
+
+    .user-form-intro strong {
+        display: block;
+        font-size: 15px;
+        color: var(--azul-profundo);
+    }
+
+    .user-form-intro p {
+        margin: 5px 0 0;
+        color: #718396;
+        font-size: 11px;
+    }
+
+    .user-section {
+        padding: 23px 24px;
+        border-bottom: 1px solid #edf1f4;
+    }
+
+    .user-section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 19px;
+    }
+
+    .user-section-icon {
+        width: 39px;
+        height: 39px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #edf4fb;
+        color: var(--azul-principal);
+    }
+
+    .user-section-icon svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .user-section-title h3 {
+        margin: 0;
+        font-size: 15px;
+        color: var(--azul-profundo);
+    }
+
+    .user-section-title p {
+        margin: 4px 0 0;
+        font-size: 11px;
+        color: #718396;
+    }
+
+    .user-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 17px;
+    }
+
+    .user-field label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .025em;
+        color: #536c7f;
+    }
+
+    .user-field input,
+    .user-field select,
+    .user-field textarea {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 12px;
+        border: 1px solid #ced9e1;
+        border-radius: 10px;
+        background: #fff;
+        color: #30485b;
+        font: inherit;
+        font-size: 12px;
+        outline: none;
+        transition: .18s;
+    }
+
+    .user-field textarea {
+        min-height: 86px;
+        resize: vertical;
+    }
+
+    .user-field input:focus,
+    .user-field select:focus,
+    .user-field textarea:focus {
+        border-color: #82a9cc;
+        box-shadow: 0 0 0 3px rgba(22,76,150,.08);
+    }
+
+    .user-field small {
+        display: block;
+        margin-top: 6px;
+        color: #8192a0;
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    .user-required {
+        color: #b13b3b;
+    }
+
+    .user-full {
+        grid-column: 1 / -1;
+    }
+
+    .user-module-info {
+        margin-top: 12px;
+        padding: 12px 15px;
+        border-radius: 10px;
+        background: #edf4fb;
+        color: #345a7b;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .user-agencia-section {
+        background: #fcfefd;
+    }
+
+    .user-agencia-notice {
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        border: 1px solid #cfe8d9;
+        border-radius: 11px;
+        background: #f0faf4;
+        color: #35694d;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .user-password-wrap {
+        position: relative;
+    }
+
+    .user-password-wrap input {
+        padding-right: 55px;
+    }
+
+    .user-password-toggle {
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        min-height: 32px;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 7px;
+        background: #edf4fb;
+        color: #315e88;
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .user-errors {
+        padding: 15px 18px;
+        margin-bottom: 20px;
+        background: #fff6f6;
+        border: 1px solid #efc5c5;
+        border-radius: 12px;
+        color: #a13b3b;
+        font-size: 12px;
+    }
+
+    .user-errors ul {
+        margin: 8px 0 0;
+        padding-left: 19px;
+    }
+
+    .user-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 20px 24px;
+        background: #fbfcfd;
+    }
+
+    .user-footer-note {
+        font-size: 10px;
+        color: #8192a0;
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .user-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 19px;
+        border: 0;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .user-btn-secondary {
+        background: #edf2f5;
+        color: #3d596f;
+    }
+
+    .user-btn-primary {
+        background: var(--azul-principal);
+        color: #fff;
+    }
+
+    .user-btn-primary:hover {
+        background: var(--azul-secundario);
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    @media(max-width: 700px) {
+        .user-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .user-full {
+            grid-column: auto;
+        }
+
+        .user-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .user-actions {
+            flex-direction: column;
+        }
+
+        .user-btn {
+            width: 100%;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
+
 <div class="user-form-page">
-    <div class="page-header">
-        <div class="page-title form-heading">
-            <div class="heading-icon">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="9" cy="8" r="3"></circle>
-                    <path d="M3 20v-2a6 6 0 0 1 12 0v2"></path>
-                    <path d="M18 8v6M15 11h6"></path>
-                </svg>
-            </div>
-            <div>
-                <h2>Crear Usuario</h2>
-                <p>Registre una nueva cuenta y asigne su rol de acceso dentro del sistema.</p>
-            </div>
+
+    <div class="user-heading">
+        <div class="user-heading-icon">
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round">
+                <circle cx="9" cy="8" r="3"/>
+                <path d="M3 20v-2a6 6 0 0 1 12 0v2"/>
+                <path d="M18 8v6M15 11h6"/>
+            </svg>
+        </div>
+
+        <div>
+            <h2>Crear Usuario</h2>
+            <p>
+                Administración institucional de usuarios
+                para Agentes MICOOPE y Agencias ECOSABA.
+            </p>
         </div>
     </div>
 
     @if($errors->any())
-        <div class="errors">
-            <div class="error-icon">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"></circle>
-                    <path d="M12 7v6M12 17h.01"></path>
-                </svg>
-            </div>
-            <div>
-                <strong>Revise la información ingresada</strong>
-                <ul>
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+        <div class="user-errors">
+            <strong>Revise la información ingresada.</strong>
+
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
-    <form method="POST" action="{{ route('administrador.usuarios.store') }}" class="form-card">
+    <form
+        method="POST"
+        action="{{ route('administrador.usuarios.store') }}"
+        class="user-form-card"
+        id="formCrearUsuario"
+    >
         @csrf
 
-        <div class="form-intro">
-            <div>
-                <strong>Nueva cuenta de acceso</strong>
-                <span>Complete los datos personales, permisos y credenciales del usuario.</span>
-            </div>
-            <span class="account-badge">Registro de Usuario</span>
+        <div class="user-form-intro">
+            <strong>Nueva cuenta institucional</strong>
+            <p>
+                Registre los datos personales, configure el
+                acceso y, cuando corresponda, asigne
+                al colaborador a una agencia.
+            </p>
         </div>
 
-        <section class="form-section">
-            <div class="section-title">
-                <div class="section-icon">
-                    <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="8" r="4"></circle>
-                        <path d="M4 21a8 8 0 0 1 16 0"></path>
+        {{-- INFORMACIÓN PERSONAL --}}
+
+        <section class="user-section">
+
+            <div class="user-section-title">
+                <div class="user-section-icon">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 21a8 8 0 0 1 16 0"/>
                     </svg>
                 </div>
+
                 <div>
                     <h3>Información Personal</h3>
-                    <p>Datos que identificarán al usuario dentro del sistema.</p>
+                    <p>Identificación del colaborador.</p>
                 </div>
             </div>
 
-            <div class="form-grid">
-                <div class="field">
-                    <label for="nombres">Nombres <span class="required">*</span></label>
-                    <input id="nombres" type="text" name="nombres" value="{{ old('nombres') }}" autocomplete="given-name" required>
+            <div class="user-grid">
+
+                <div class="user-field">
+                    <label for="nombres">
+                        Nombres
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nombres"
+                        name="nombres"
+                        value="{{ old('nombres') }}"
+                        maxlength="150"
+                        autocomplete="given-name"
+                        required
+                    >
                 </div>
 
-                <div class="field">
-                    <label for="apellidos">Apellidos <span class="required">*</span></label>
-                    <input id="apellidos" type="text" name="apellidos" value="{{ old('apellidos') }}" autocomplete="family-name" required>
+                <div class="user-field">
+                    <label for="apellidos">
+                        Apellidos
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="apellidos"
+                        name="apellidos"
+                        value="{{ old('apellidos') }}"
+                        maxlength="150"
+                        autocomplete="family-name"
+                        required
+                    >
                 </div>
+
             </div>
+
         </section>
 
-        <section class="form-section">
-            <div class="section-title">
-                <div class="section-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M5 4h14v16H5z"></path>
-                        <path d="M9 8h6M9 12h6"></path>
+        {{-- CUENTA Y PERMISOS --}}
+
+        <section class="user-section">
+
+            <div class="user-section-title">
+                <div class="user-section-icon">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <path d="M8 9h8M8 13h8"/>
                     </svg>
                 </div>
+
                 <div>
                     <h3>Cuenta y Permisos</h3>
-                    <p>Configure el usuario, rol institucional y estado de acceso.</p>
+                    <p>
+                        Usuario, rol institucional y estado.
+                    </p>
                 </div>
             </div>
 
-            <div class="form-grid">
-                <div class="field">
-                    <label for="usuario">Usuario <span class="required">*</span></label>
-                    <input id="usuario" type="text" name="usuario" value="{{ old('usuario') }}" autocomplete="username" required>
-                    <span class="field-help">Identificador utilizado para iniciar sesión.</span>
+            <div class="user-grid">
+
+                <div class="user-field">
+                    <label for="usuario">
+                        Nombre de Usuario
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="usuario"
+                        name="usuario"
+                        value="{{ old('usuario') }}"
+                        maxlength="50"
+                        autocomplete="username"
+                        required
+                    >
+
+                    <small>
+                        Identificador utilizado para iniciar sesión.
+                    </small>
                 </div>
 
-                <div class="field">
-                    <label for="rol_id">Rol <span class="required">*</span></label>
-                    <select id="rol_id" name="rol_id" required>
-                        <option value="">Seleccione un rol</option>
+                <div class="user-field">
+                    <label for="rol_id">
+                        Rol Institucional
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <select
+                        id="rol_id"
+                        name="rol_id"
+                        required
+                    >
+                        <option value="">
+                            Seleccione un rol
+                        </option>
+
                         @foreach($roles as $rol)
-                            <option value="{{ $rol->id }}" @selected(old('rol_id') == $rol->id)>
-                                {{ $rol->nombre }}
+                            @php
+                                $codigoRol = strtoupper(
+                                    trim($rol->nombre)
+                                );
+
+                                $areaRol = match($codigoRol) {
+                                    'AGENTE',
+                                    'PROMOTOR',
+                                    'JEFEDEAGENTES'
+                                        => 'AGENTES',
+
+                                    'RECEPTOR',
+                                    'JEFECAJA',
+                                    'SUBJEFECAJA',
+                                    'JEFEAGENCIA'
+                                        => 'AGENCIAS',
+
+                                    default => 'INSTITUCIONAL',
+                                };
+
+                                $nombreRol = match($codigoRol) {
+                                    'JEFEDEAGENTES' => 'Jefe de Agentes',
+                                    'JEFECAJA' => 'Jefe de Caja',
+                                    'SUBJEFECAJA' => 'Subjefe de Caja',
+                                    'JEFEAGENCIA' => 'Jefe de Agencia',
+                                    'AUDITORIA' => 'Auditoría',
+                                    default => $rol->nombre,
+                                };
+                            @endphp
+
+                            <option
+                                value="{{ $rol->id }}"
+                                data-area="{{ $areaRol }}"
+                                @selected(old('rol_id') == $rol->id)
+                            >
+                                {{ $nombreRol }}
+                                —
+                                {{
+                                    match($areaRol) {
+                                        'AGENTES' => 'MICOOPE',
+                                        'AGENCIAS' => 'ECOSABA',
+                                        default => 'Institucional'
+                                    }
+                                }}
                             </option>
                         @endforeach
                     </select>
-                    <span class="field-help">Determina los módulos y acciones disponibles para la cuenta.</span>
+
+                    <small>
+                        Determina los módulos y permisos
+                        disponibles para la cuenta.
+                    </small>
                 </div>
 
-                <div class="field">
-                    <label for="estado">Estado <span class="required">*</span></label>
-                    <select id="estado" name="estado" required>
-                        <option value="ACTIVO" @selected(old('estado', 'ACTIVO') === 'ACTIVO')>ACTIVO</option>
-                        <option value="INACTIVO" @selected(old('estado') === 'INACTIVO')>INACTIVO</option>
+                <div class="user-field">
+                    <label for="estado">
+                        Estado de la Cuenta
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <select
+                        id="estado"
+                        name="estado"
+                        required
+                    >
+                        <option
+                            value="ACTIVO"
+                            @selected(old('estado', 'ACTIVO') === 'ACTIVO')
+                        >
+                            ACTIVO
+                        </option>
+
+                        <option
+                            value="INACTIVO"
+                            @selected(old('estado') === 'INACTIVO')
+                        >
+                            INACTIVO
+                        </option>
                     </select>
-                    <span class="field-help">Las cuentas inactivas no deben tener acceso operativo al sistema.</span>
+
+                    <small>
+                        Las cuentas inactivas no pueden operar
+                        en el sistema.
+                    </small>
                 </div>
+
+                <div class="user-field">
+                    <label>Área del Sistema</label>
+
+                    <input
+                        type="text"
+                        id="area_sistema"
+                        value="Seleccione un rol"
+                        readonly
+                    >
+
+                    <small>
+                        Se determina automáticamente según el rol.
+                    </small>
+                </div>
+
             </div>
+
+            <div class="user-module-info" id="informacionRol">
+                Seleccione un rol para identificar el módulo
+                al que tendrá acceso el usuario.
+            </div>
+
         </section>
 
-        <section class="form-section">
-            <div class="section-title">
-                <div class="section-icon security">
-                    <svg viewBox="0 0 24 24">
-                        <rect x="4" y="10" width="16" height="11" rx="2"></rect>
-                        <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
-                        <circle cx="12" cy="15" r="1"></circle>
+        {{-- ASIGNACIÓN A AGENCIA --}}
+
+        <section
+            class="user-section user-agencia-section"
+            id="seccionAgencia"
+            hidden
+        >
+
+            <div class="user-section-title">
+                <div class="user-section-icon">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8">
+                        <rect x="3" y="5" width="18" height="16" rx="2"/>
+                        <path d="M8 21V10h8v11M3 10h18"/>
                     </svg>
                 </div>
+
                 <div>
-                    <h3>Credenciales de Acceso</h3>
-                    <p>Defina la contraseña inicial para la nueva cuenta.</p>
+                    <h3>Asignación a Agencia ECOSABA</h3>
+                    <p>
+                        Vinculación institucional del personal
+                        con su agencia de trabajo.
+                    </p>
                 </div>
             </div>
 
-            <div class="form-grid">
-                <div class="field">
-                    <label for="password">Contraseña <span class="required">*</span></label>
-                    <div class="password-wrap">
-                        <input id="password" type="password" name="password" autocomplete="new-password" required>
-                        <button type="button" class="password-toggle" data-target="password" aria-label="Mostrar contraseña" title="Mostrar contraseña">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
-                                <circle cx="12" cy="12" r="2.8"></circle>
-                            </svg>
-                        </button>
-                    </div>
+            <div class="user-agencia-notice">
+                Esta sección registra la asignación del
+                colaborador a una agencia. Las ventanillas
+                y los turnos de los receptores se administran
+                posteriormente desde las funciones
+                correspondientes de Jefatura de Caja.
+            </div>
+
+            <div class="user-grid">
+
+                <div class="user-field">
+                    <label for="agencia_id">
+                        Agencia
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <select
+                        id="agencia_id"
+                        name="agencia_id"
+                    >
+                        <option value="">
+                            Seleccione una agencia
+                        </option>
+
+                        @foreach($agencias as $agencia)
+                            <option
+                                value="{{ $agencia->id }}"
+                                @selected(old('agencia_id') == $agencia->id)
+                            >
+                                {{ $agencia->codigo }}
+                                —
+                                {{ $agencia->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <div class="field">
-                    <label for="password_confirmation">Confirmar Contraseña <span class="required">*</span></label>
-                    <div class="password-wrap">
-                        <input id="password_confirmation" type="password" name="password_confirmation" autocomplete="new-password" required>
-                        <button type="button" class="password-toggle" data-target="password_confirmation" aria-label="Mostrar contraseña" title="Mostrar contraseña">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
-                                <circle cx="12" cy="12" r="2.8"></circle>
-                            </svg>
-                        </button>
-                    </div>
+                <div class="user-field">
+                    <label for="tipo_asignacion">
+                        Tipo de Asignación
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <select
+                        id="tipo_asignacion"
+                        name="tipo_asignacion"
+                    >
+                        <option
+                            value="PERMANENTE"
+                            @selected(old('tipo_asignacion', 'PERMANENTE') === 'PERMANENTE')
+                        >
+                            Permanente
+                        </option>
+
+                        <option
+                            value="TEMPORAL"
+                            @selected(old('tipo_asignacion') === 'TEMPORAL')
+                        >
+                            Temporal
+                        </option>
+                    </select>
+
+                    <small>
+                        Las asignaciones temporales requieren
+                        fecha de finalización.
+                    </small>
                 </div>
+
+                <div class="user-field">
+                    <label for="fecha_inicio">
+                        Fecha de Inicio
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <input
+                        type="date"
+                        id="fecha_inicio"
+                        name="fecha_inicio"
+                        value="{{ old('fecha_inicio', now()->toDateString()) }}"
+                    >
+                </div>
+
+                <div class="user-field">
+                    <label for="fecha_fin">
+                        Fecha de Finalización
+                        <span
+                            class="user-required"
+                            id="indicadorFechaFin"
+                            hidden
+                        >*</span>
+                    </label>
+
+                    <input
+                        type="date"
+                        id="fecha_fin"
+                        name="fecha_fin"
+                        value="{{ old('fecha_fin') }}"
+                    >
+
+                    <small id="ayudaFechaFin">
+                        Opcional para asignaciones permanentes.
+                    </small>
+                </div>
+
+                <div class="user-field user-full">
+                    <label for="motivo_asignacion">
+                        Motivo u Observaciones
+                    </label>
+
+                    <textarea
+                        id="motivo_asignacion"
+                        name="motivo_asignacion"
+                        maxlength="2000"
+                        placeholder="Indique el motivo de la asignación, si corresponde."
+                    >{{ old('motivo_asignacion') }}</textarea>
+
+                    <small>
+                        Puede indicar si corresponde a una
+                        cobertura temporal, traslado u otra
+                        circunstancia administrativa.
+                    </small>
+                </div>
+
             </div>
+
         </section>
 
-        <div class="form-footer">
-            <span class="footer-note"><span class="required">*</span> Campos obligatorios.</span>
-            <div class="actions">
-                <a href="{{ route('administrador.usuarios.index') }}" class="btn secondary">
-                    <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg>
+        {{-- CREDENCIALES --}}
+
+        <section class="user-section">
+
+            <div class="user-section-title">
+                <div class="user-section-icon">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8">
+                        <rect x="4" y="10" width="16" height="11" rx="2"/>
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                    </svg>
+                </div>
+
+                <div>
+                    <h3>Credenciales de Acceso</h3>
+                    <p>
+                        Contraseña inicial para el nuevo usuario.
+                    </p>
+                </div>
+            </div>
+
+            <div class="user-grid">
+
+                <div class="user-field">
+                    <label for="password">
+                        Contraseña
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <div class="user-password-wrap">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="user-password-toggle"
+                            data-target="password"
+                        >
+                            Mostrar
+                        </button>
+                    </div>
+                </div>
+
+                <div class="user-field">
+                    <label for="password_confirmation">
+                        Confirmar Contraseña
+                        <span class="user-required">*</span>
+                    </label>
+
+                    <div class="user-password-wrap">
+                        <input
+                            type="password"
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            minlength="8"
+                            autocomplete="new-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            class="user-password-toggle"
+                            data-target="password_confirmation"
+                        >
+                            Mostrar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <div class="user-footer">
+
+            <span class="user-footer-note">
+                <span class="user-required">*</span>
+                Campos obligatorios.
+            </span>
+
+            <div class="user-actions">
+
+                <a
+                    href="{{ route('administrador.usuarios.index') }}"
+                    class="user-btn user-btn-secondary"
+                >
                     Cancelar
                 </a>
-                <button type="submit" class="btn primary">
-                    <svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"></path><path d="M8 4v6h8V4"></path><path d="M8 20v-6h8v6"></path></svg>
+
+                <button
+                    type="submit"
+                    class="user-btn user-btn-primary"
+                >
                     Guardar Usuario
                 </button>
+
             </div>
+
         </div>
+
     </form>
+
 </div>
+
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.password-toggle').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const input = document.getElementById(this.dataset.target);
-            if (!input) return;
 
-            const mostrar = input.type === 'password';
-            input.type = mostrar ? 'text' : 'password';
-            this.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
-            this.setAttribute('title', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    const rol = document.getElementById('rol_id');
+    const area = document.getElementById('area_sistema');
+    const informacion = document.getElementById('informacionRol');
+
+    const seccionAgencia = document.getElementById('seccionAgencia');
+
+    const agencia = document.getElementById('agencia_id');
+    const tipo = document.getElementById('tipo_asignacion');
+    const inicio = document.getElementById('fecha_inicio');
+    const fin = document.getElementById('fecha_fin');
+
+    const indicadorFin = document.getElementById('indicadorFechaFin');
+    const ayudaFin = document.getElementById('ayudaFechaFin');
+
+    function actualizarAsignacion() {
+        const temporal = tipo.value === 'TEMPORAL';
+
+        fin.required = temporal;
+        indicadorFin.hidden = !temporal;
+
+        ayudaFin.textContent = temporal
+            ? 'Obligatoria para una asignación temporal.'
+            : 'Opcional para asignaciones permanentes.';
+    }
+
+    function actualizarRol() {
+        const opcion = rol.options[rol.selectedIndex];
+
+        const modulo = opcion
+            ? opcion.dataset.area || ''
+            : '';
+
+        const esAgencia = modulo === 'AGENCIAS';
+
+        seccionAgencia.hidden = !esAgencia;
+
+        agencia.required = esAgencia;
+        tipo.required = esAgencia;
+        inicio.required = esAgencia;
+
+        agencia.disabled = !esAgencia;
+        tipo.disabled = !esAgencia;
+        inicio.disabled = !esAgencia;
+        fin.disabled = !esAgencia;
+
+        document.getElementById('motivo_asignacion').disabled =
+            !esAgencia;
+
+        if (!esAgencia) {
+            fin.required = false;
+        } else {
+            actualizarAsignacion();
+        }
+
+        switch (modulo) {
+            case 'AGENCIAS':
+                area.value = 'Agencias ECOSABA';
+                informacion.textContent =
+                    'Este usuario tendrá acceso al módulo de ' +
+                    'Agencias ECOSABA según su rol. ' +
+                    'Debe registrar su asignación institucional.';
+                break;
+
+            case 'AGENTES':
+                area.value = 'Agentes MICOOPE';
+                informacion.textContent =
+                    'Este usuario pertenece al módulo de ' +
+                    'Agentes MICOOPE. No requiere asignación ' +
+                    'a una agencia ECOSABA.';
+                break;
+
+            case 'INSTITUCIONAL':
+                area.value = 'Institucional / Compartido';
+                informacion.textContent =
+                    'Este rol tiene funciones institucionales ' +
+                    'compartidas según los permisos configurados.';
+                break;
+
+            default:
+                area.value = 'Seleccione un rol';
+                informacion.textContent =
+                    'Seleccione un rol para identificar ' +
+                    'el módulo correspondiente.';
+        }
+    }
+
+    rol.addEventListener('change', actualizarRol);
+    tipo.addEventListener('change', actualizarAsignacion);
+
+    actualizarRol();
+
+    document.querySelectorAll('.user-password-toggle')
+        .forEach(function (boton) {
+
+            boton.addEventListener('click', function () {
+
+                const input = document.getElementById(
+                    boton.dataset.target
+                );
+
+                if (!input) return;
+
+                const visible = input.type === 'password';
+
+                input.type = visible ? 'text' : 'password';
+
+                boton.textContent = visible
+                    ? 'Ocultar'
+                    : 'Mostrar';
+            });
         });
-    });
+
 });
 </script>
 @endpush

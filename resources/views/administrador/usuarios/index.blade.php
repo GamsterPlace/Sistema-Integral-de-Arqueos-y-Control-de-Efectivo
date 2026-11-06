@@ -1,247 +1,118 @@
 @extends('layouts.administrador')
 
-@section('title', 'Usuarios')
+@section('title', 'Gestión de Usuarios')
 @section('module-title', 'Usuarios')
 
 @push('styles')
 <style>
-    .users-page{max-width:1550px;margin:0 auto}
-    .module-heading{display:flex;align-items:center;gap:15px}
-    .heading-icon{width:54px;height:54px;flex:0 0 54px;display:flex;align-items:center;justify-content:center;border-radius:16px;color:#fff;background:linear-gradient(145deg,var(--azul-principal),var(--azul-profundo));box-shadow:0 10px 24px rgba(22,76,150,.18)}
-    .heading-icon svg,.metric-icon svg,.filter-icon svg,.btn svg,.action-btn svg,.empty-icon svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    .heading-icon svg{width:26px;height:26px}
-    .header-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border-radius:11px;background:var(--azul-principal);color:#fff;font-size:10.5px;font-weight:800;text-decoration:none;box-shadow:0 7px 17px rgba(22,76,150,.15);transition:.2s ease}
-    .header-action:hover{transform:translateY(-1px);background:var(--azul-secundario);color:#fff}
-    .header-action svg{width:17px;height:17px}
-    .metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
-    .metric-card{display:flex;align-items:center;gap:14px;min-height:105px;padding:17px;border:1px solid #e0e8ee;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(20,57,83,.05)}
-    .metric-icon{width:46px;height:46px;flex:0 0 46px;display:flex;align-items:center;justify-content:center;border-radius:13px;color:var(--azul-principal);background:#edf4fb}
-    .metric-icon svg{width:21px;height:21px}
-    .metric-card.active .metric-icon{color:var(--verde-oscuro);background:#eaf8f1}
-    .metric-card.inactive .metric-icon{color:#b13b3b;background:#fff0f0}
-    .metric-card.admin .metric-icon{color:#725aa5;background:#f3effb}
-    .metric-label{display:block;color:#758697;font-size:8.5px;font-weight:800;text-transform:uppercase}
-    .metric-value{display:block;margin-top:6px;color:var(--azul-profundo);font-size:24px;font-weight:800;line-height:1}
-    .filters-card,.table-card{border:1px solid #e0e8ee;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(20,57,83,.05)}
-    .filters-card{padding:18px;margin-bottom:20px}
-    .filters-title{display:flex;align-items:center;gap:11px;margin-bottom:15px;padding-bottom:14px;border-bottom:1px solid #edf1f4}
-    .filter-icon{width:38px;height:38px;flex:0 0 38px;display:flex;align-items:center;justify-content:center;border-radius:11px;color:var(--azul-principal);background:#edf4fb}
-    .filter-icon svg{width:18px;height:18px}
-    .filters-title h3{margin:0;color:var(--azul-profundo);font-size:14px}.filters-title p{margin:3px 0 0;color:var(--texto-secundario);font-size:10px}
-    .filters-grid{display:grid;grid-template-columns:minmax(260px,1fr) 230px 200px;gap:10px}
-    .form-control{width:100%;min-height:42px;padding:0 12px;border:1px solid #ced9e1;border-radius:10px;outline:none;background:#fff;color:#30485b;font-size:11px;box-sizing:border-box;transition:.18s ease}
-    .form-control:focus{border-color:#82a9cc;box-shadow:0 0 0 3px rgba(22,76,150,.08)}
-    .filter-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 14px;border:0;border-radius:10px;font-size:10px;font-weight:800;text-decoration:none;cursor:pointer;transition:.2s ease}
-    .btn svg{width:15px;height:15px}.btn-primary{background:var(--azul-principal);color:#fff}.btn-primary:hover{background:var(--azul-secundario);color:#fff}.btn-secondary{background:#edf2f5;color:#3d596f}.btn-secondary:hover{background:#e4ebf0;color:#29485f}
-    .table-card{overflow:hidden}.table-header{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:18px 20px;border-bottom:1px solid #edf1f4;background:#fafcfd}
-    .table-header h3{margin:0;color:#0a3158;font-size:15px}.table-header p{margin:4px 0 0;color:#82909a;font-size:10px}
-    .record-count{padding:6px 10px;border:1px solid #dce6ed;border-radius:999px;background:#fff;color:#607586;font-size:9px;font-weight:800;white-space:nowrap}
-    .table-responsive{overflow-x:auto}.users-table{width:100%;min-width:980px;border-collapse:collapse}
-    .users-table th,.users-table td{padding:12px 14px;border-bottom:1px solid #edf1f4;text-align:left;vertical-align:middle}
-    .users-table th{background:#f7f9fb;color:#687b8b;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.025em}
-    .users-table td{color:#40596c;font-size:10.5px}.users-table tbody tr:hover{background:#fbfdfe}
-    .user-name{display:block;color:#173c5c;font-size:11px;font-weight:800}.user-id{display:block;margin-top:3px;color:#8a99a5;font-size:8.5px}
-    .role-badge,.status-badge{display:inline-flex;align-items:center;min-height:26px;padding:0 9px;border-radius:999px;font-size:9px;font-weight:800}
-    .role-badge{color:#315f86;background:#edf4fb;border:1px solid #d5e4f0}
-    .status-badge{gap:6px;text-transform:uppercase}.status-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-    .status-active{color:#08783d;background:#e9f8f0;border:1px solid #c7ecd8}.status-inactive{color:#b13b3b;background:#fff0f0;border:1px solid #f0cccc}
-    .actions-cell{white-space:nowrap}.action-group{display:flex;align-items:center;gap:6px}
-    .action-btn{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:9px;text-decoration:none;cursor:pointer;transition:.18s ease}
-    .action-btn svg{width:16px;height:16px}
-    .action-view{color:#31536e;background:#edf2f5;border-color:#e1e8ed}.action-view:hover{background:#e3eaf0;color:#24475f}
-    .action-edit{color:#164c96;background:#edf4fb;border-color:#d5e4f0}.action-edit:hover{background:#dfeefa;color:#0b3d76}
-    .action-state{color:#8b6500;background:#fff7df;border-color:#f0e2ae}.action-state.activate{color:#08783d;background:#e9f8f0;border-color:#c7ecd8}
-    .inline-form{display:inline;margin:0}.empty-state{padding:40px 20px;text-align:center;color:#7a8b98}
-    .empty-icon{width:50px;height:50px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#f0f4f7;color:#7a8fa0}.empty-icon svg{width:23px;height:23px}
-    .empty-state strong{display:block;color:#456074;font-size:12px}.empty-state span{display:block;margin-top:4px;font-size:10px}
-    .pagination{padding:16px 18px}
-    @media(max-width:1050px){.metrics-grid{grid-template-columns:repeat(2,1fr)}.filters-grid{grid-template-columns:1fr 1fr}.filters-grid .form-control:first-child{grid-column:1/-1}}
-    @media(max-width:700px){.metrics-grid,.filters-grid{grid-template-columns:1fr}.filters-grid .form-control:first-child{grid-column:auto}.filter-actions{flex-direction:column}.btn{width:100%}.page-header{align-items:flex-start}.header-action{width:100%}}
+.usuarios-panel{max-width:1500px;margin:auto;color:#27445b}.usuarios-panel *{box-sizing:border-box}.usuarios-header{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}.usuarios-header h2{margin:0;color:var(--azul-profundo,#163d65);font-size:25px}.usuarios-header p{margin:6px 0 0;color:#758799;font-size:12px}.usuarios-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 17px;border-radius:10px;border:0;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;background:var(--azul-principal,#164c96);color:white}.usuarios-btn:hover{opacity:.92;color:white}.usuarios-btn-light{background:#eaf0f5;color:#31516b}.usuarios-metricas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.usuarios-metrica,.usuarios-filtros,.usuarios-tabla-card{background:white;border:1px solid #dfe8ef;border-radius:15px;box-shadow:0 6px 20px rgba(19,57,85,.04)}.usuarios-metrica{padding:19px}.usuarios-metrica span{display:block;color:#74889a;font-size:11px;font-weight:700;text-transform:uppercase}.usuarios-metrica strong{display:block;font-size:28px;margin-top:8px;color:#163d65}.usuarios-filtros{padding:20px;margin-bottom:20px}.usuarios-filtros h3{font-size:15px;color:#163d65;margin:0 0 5px}.usuarios-filtros p{font-size:11px;color:#788b99;margin:0 0 17px}.usuarios-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.usuarios-campo label{display:block;font-size:10px;font-weight:800;color:#5b7285;margin-bottom:7px}.usuarios-campo input,.usuarios-campo select{width:100%;height:43px;padding:0 10px;border:1px solid #ccd9e3;border-radius:9px;background:#fff;color:#344f64;font-size:11px}.usuarios-campo input:focus,.usuarios-campo select:focus{outline:2px solid #b7d3ed}.usuarios-acciones-filtro{display:flex;justify-content:flex-end;gap:10px;margin-top:15px}.usuarios-tabla-cabecera{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 20px;border-bottom:1px solid #e8eef3}.usuarios-tabla-cabecera h3{margin:0;color:#163d65;font-size:15px}.usuarios-tabla-cabecera p{margin:5px 0 0;color:#80909e;font-size:11px}.usuarios-contador{font-size:11px;color:#597184;border:1px solid #dce5eb;border-radius:20px;padding:6px 10px}.usuarios-scroll{overflow-x:auto}.usuarios-tabla{width:100%;min-width:1000px;border-collapse:collapse}.usuarios-tabla th,.usuarios-tabla td{padding:14px;border-bottom:1px solid #edf1f4;text-align:left;vertical-align:middle}.usuarios-tabla th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#6d8292;background:#f7fafc}.usuarios-tabla td{font-size:12px;color:#385267}.usuarios-tabla tbody tr:hover{background:#fafcfe}.usuarios-nombre{font-weight:800;color:#163d65}.usuarios-subtexto{display:block;margin-top:4px;font-size:10px;color:#8193a0}.usuarios-etiqueta{display:inline-flex;align-items:center;padding:6px 10px;border-radius:30px;background:#edf4fb;color:#245a85;font-size:10px;font-weight:800}.usuarios-etiqueta.agencia{background:#eaf8f0;color:#187344}.usuarios-etiqueta.institucional{background:#f1eef9;color:#67519b}.usuarios-estado{display:inline-block;padding:6px 10px;border-radius:30px;font-size:10px;font-weight:800}.usuarios-estado.activo{background:#e8f7ee;color:#167640}.usuarios-estado.inactivo{background:#fff0f0;color:#a63737}.usuarios-estado.bloqueado{background:#fff5dc;color:#916400}.usuarios-opciones{display:flex;gap:6px;align-items:center}.usuarios-opciones a,.usuarios-opciones button{border:1px solid #dce6ee;background:#f0f5f9;color:#275777;border-radius:8px;padding:8px 10px;text-decoration:none;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}.usuarios-opciones form{margin:0}.usuarios-vacio{text-align:center;padding:36px;color:#718597}.usuarios-paginacion{padding:18px}@media(max-width:1100px){.usuarios-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.usuarios-metricas{grid-template-columns:repeat(2,minmax(0,1fr))}.usuarios-grid{grid-template-columns:1fr}.usuarios-acciones-filtro{flex-wrap:wrap}.usuarios-header h2{font-size:21px}}
 </style>
 @endpush
 
 @section('content')
-<div class="users-page">
-    <div class="page-header">
-        <div class="page-title module-heading">
-            <div class="heading-icon">
-                <svg viewBox="0 0 24 24">
-                    <circle cx="9" cy="8" r="3"></circle>
-                    <path d="M3 20v-2a6 6 0 0 1 12 0v2"></path>
-                    <circle cx="17" cy="9" r="2"></circle>
-                    <path d="M16 14a5 5 0 0 1 5 5v1"></path>
-                </svg>
-            </div>
-            <div>
-                <h2>Gestión de Usuarios</h2>
-                <p>Administre las cuentas que tienen acceso al Sistema de Arqueos.</p>
-            </div>
+@php
+    $moduloSeleccionado = $modulo ?? request('modulo', 'todos');
+    $agenciaSeleccionada = (int) ($agenciaId ?? request('agencia_id', 0));
+    $rolesAgentes = ['AGENTE', 'PROMOTOR', 'JEFEDEAGENTES'];
+    $rolesAgencias = ['RECEPTOR', 'JEFECAJA', 'SUBJEFECAJA', 'JEFEAGENCIA'];
+@endphp
+<div class="usuarios-panel">
+    <div class="usuarios-header">
+        <div>
+            <h2>Gestión de Usuarios</h2>
+            <p>Administración de cuentas de Agentes MICOOPE, Agencias ECOSABA y personal institucional.</p>
         </div>
-
-        <a href="{{ route('administrador.usuarios.create') }}" class="header-action">
-            <svg viewBox="0 0 24 24">
-                <circle cx="9" cy="8" r="3"></circle>
-                <path d="M3 20v-2a6 6 0 0 1 12 0v2"></path>
-                <path d="M18 8v6M15 11h6"></path>
-            </svg>
-            Crear Usuario
-        </a>
+        <a class="usuarios-btn" href="{{ route('administrador.usuarios.create') }}">+ Crear usuario</a>
     </div>
 
-    <section class="metrics-grid">
-        <article class="metric-card">
-            <div class="metric-icon">
-                <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2"></path><circle cx="17" cy="9" r="2"></circle><path d="M16 14a5 5 0 0 1 5 5v1"></path></svg>
-            </div>
-            <div><span class="metric-label">Total Usuarios</span><strong class="metric-value">{{ $resumen->total }}</strong></div>
-        </article>
-
-        <article class="metric-card active">
-            <div class="metric-icon">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 2.5 2.5L16 9"></path></svg>
-            </div>
-            <div><span class="metric-label">Activos</span><strong class="metric-value">{{ $resumen->activos }}</strong></div>
-        </article>
-
-        <article class="metric-card inactive">
-            <div class="metric-icon">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6M15 9l-6 6"></path></svg>
-            </div>
-            <div><span class="metric-label">Inactivos</span><strong class="metric-value">{{ $resumen->inactivos }}</strong></div>
-        </article>
-
-        <article class="metric-card admin">
-            <div class="metric-icon">
-                <svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.8 3.2 8 7.5 9.5 4.3-1.5 7.5-4.7 7.5-9.5V6L12 3Z"></path><path d="m9 12 2 2 4-4"></path></svg>
-            </div>
-            <div><span class="metric-label">Administradores</span><strong class="metric-value">{{ $resumen->administradores }}</strong></div>
-        </article>
-    </section>
-
-    <form method="GET" action="{{ route('administrador.usuarios.index') }}" class="filters-card">
-        <div class="filters-title">
-            <div class="filter-icon">
-                <svg viewBox="0 0 24 24"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z"></path></svg>
-            </div>
-            <div>
-                <h3>Filtros de Usuarios</h3>
-                <p>Localice cuentas por nombre, usuario, rol o estado.</p>
-            </div>
+    @if(session('success'))
+        <div role="status" style="padding:13px 17px;margin-bottom:16px;border-radius:10px;background:#eaf8f0;color:#176b3e;border:1px solid #cdebd8;font-size:12px">{{ session('success') }}</div>
+    @endif
+    @if($errors->any())
+        <div role="alert" style="padding:13px 17px;margin-bottom:16px;border-radius:10px;background:#fff0f0;color:#a63737;border:1px solid #efcaca;font-size:12px">
+            @foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach
         </div>
+    @endif
 
-        <div class="filters-grid">
-            <input type="text" name="buscar" value="{{ $buscar }}" placeholder="Usuario, nombre, apellido o rol" class="form-control">
+    <div class="usuarios-metricas">
+        <div class="usuarios-metrica"><span>Total de usuarios</span><strong>{{ number_format($resumen->total) }}</strong></div>
+        <div class="usuarios-metrica"><span>Usuarios activos</span><strong>{{ number_format($resumen->activos) }}</strong></div>
+        <div class="usuarios-metrica"><span>Usuarios inactivos</span><strong>{{ number_format($resumen->inactivos) }}</strong></div>
+        <div class="usuarios-metrica"><span>Administradores</span><strong>{{ number_format($resumen->administradores) }}</strong></div>
+    </div>
 
-            <select name="rol_id" class="form-control">
-                <option value="">Todos los Roles</option>
-                @foreach($roles as $rol)
-                    <option value="{{ $rol->id }}" @selected($rolId === (int) $rol->id)>{{ $rol->nombre }}</option>
+    <form method="GET" action="{{ route('administrador.usuarios.index') }}" class="usuarios-filtros">
+        <h3>Filtros de búsqueda</h3>
+        <p>Puede combinar módulo, agencia, rol, estado y texto de búsqueda.</p>
+        <div class="usuarios-grid">
+            <div class="usuarios-campo"><label for="buscar">Buscar usuario</label><input id="buscar" type="search" name="buscar" value="{{ $buscar ?? request('buscar', '') }}" placeholder="Nombre, apellido o usuario"></div>
+            <div class="usuarios-campo"><label for="modulo">Módulo</label><select id="modulo" name="modulo">
+                <option value="todos" @selected($moduloSeleccionado === 'todos')>Todos los módulos</option>
+                <option value="agentes" @selected($moduloSeleccionado === 'agentes')>Agentes MICOOPE</option>
+                <option value="agencias" @selected($moduloSeleccionado === 'agencias')>Agencias ECOSABA</option>
+                <option value="institucional" @selected($moduloSeleccionado === 'institucional')>Institucional</option>
+            </select></div>
+            <div class="usuarios-campo"><label for="agencia_id">Agencia ECOSABA</label><select id="agencia_id" name="agencia_id">
+                <option value="">Todas las agencias</option>
+                @foreach($agencias as $agencia)
+                    <option value="{{ $agencia->id }}" @selected($agenciaSeleccionada === (int) $agencia->id)>{{ $agencia->codigo }} — {{ $agencia->nombre }}</option>
                 @endforeach
-            </select>
-
-            <select name="estado" class="form-control">
-                <option value="">Todos los Estados</option>
-                <option value="ACTIVO" @selected($estado === 'ACTIVO')>Activos</option>
-                <option value="INACTIVO" @selected($estado === 'INACTIVO')>Inactivos</option>
-            </select>
+            </select></div>
+            <div class="usuarios-campo"><label for="rol_id">Rol</label><select id="rol_id" name="rol_id"><option value="">Todos los roles</option>
+                @foreach($roles as $rol)<option value="{{ $rol->id }}" @selected((int) ($rolId ?? 0) === (int) $rol->id)>{{ $rol->nombre }}</option>@endforeach
+            </select></div>
+            <div class="usuarios-campo"><label for="estado">Estado</label><select id="estado" name="estado">
+                <option value="">Todos los estados</option>
+                <option value="ACTIVO" @selected(($estado ?? '') === 'ACTIVO')>Activo</option>
+                <option value="INACTIVO" @selected(($estado ?? '') === 'INACTIVO')>Inactivo</option>
+                <option value="BLOQUEADO" @selected(($estado ?? '') === 'BLOQUEADO')>Bloqueado</option>
+            </select></div>
         </div>
-
-        <div class="filter-actions">
-            <a href="{{ route('administrador.usuarios.index') }}" class="btn btn-secondary">
-                <svg viewBox="0 0 24 24"><path d="M4 4v6h6"></path><path d="M5.5 15a7 7 0 1 0 .5-7"></path></svg>
-                Limpiar
-            </a>
-            <button type="submit" class="btn btn-primary">
-                <svg viewBox="0 0 24 24"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z"></path></svg>
-                Aplicar Filtros
-            </button>
+        <div class="usuarios-acciones-filtro">
+            <a class="usuarios-btn usuarios-btn-light" href="{{ route('administrador.usuarios.index') }}">Limpiar filtros</a>
+            <button class="usuarios-btn" type="submit">Aplicar filtros</button>
         </div>
     </form>
 
-    <section class="table-card">
-        <header class="table-header">
-            <div>
-                <h3>Usuarios Registrados</h3>
-                <p>Cuentas y permisos registrados actualmente en el sistema.</p>
-            </div>
-            <span class="record-count">{{ $usuarios->total() }} registros</span>
-        </header>
-
-        <div class="table-responsive">
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Usuario</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($usuarios as $usuario)
-                        @php
-                            $nombre = trim(($usuario->nombres ?? '') . ' ' . ($usuario->apellidos ?? ''));
-                        @endphp
-                        <tr>
-                            <td>
-                                <strong class="user-name">{{ $nombre !== '' ? $nombre : 'Sin nombre registrado' }}</strong>
-                                <span class="user-id">ID #{{ $usuario->id }}</span>
-                            </td>
-                            <td><strong>{{ $usuario->usuario }}</strong></td>
-                            <td><span class="role-badge">{{ $usuario->rol_nombre }}</span></td>
-                            <td>
-                                <span class="status-badge {{ $usuario->estado === 'ACTIVO' ? 'status-active' : 'status-inactive' }}">
-                                    {{ $usuario->estado }}
-                                </span>
-                            </td>
-                            <td class="actions-cell">
-                                <div class="action-group">
-                                    <a href="{{ route('administrador.usuarios.show', $usuario->id) }}" class="action-btn action-view" title="Ver usuario" aria-label="Ver usuario">
-                                        <svg viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>
-                                    </a>
-
-                                    <a href="{{ route('administrador.usuarios.edit', $usuario->id) }}" class="action-btn action-edit" title="Editar usuario" aria-label="Editar usuario">
-                                        <svg viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20Z"></path><path d="m13.5 7 3.5 3.5"></path></svg>
-                                    </a>
-
-                                    @if(auth()->id() !== $usuario->id)
-                                        <form method="POST" action="{{ route('administrador.usuarios.estado', $usuario->id) }}" class="inline-form">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="action-btn action-state {{ $usuario->estado === 'INACTIVO' ? 'activate' : '' }}" title="{{ $usuario->estado === 'ACTIVO' ? 'Desactivar usuario' : 'Activar usuario' }}" aria-label="{{ $usuario->estado === 'ACTIVO' ? 'Desactivar usuario' : 'Activar usuario' }}">
-                                                @if($usuario->estado === 'ACTIVO')
-                                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M8 12h8"></path></svg>
-                                                @else
-                                                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M8 12h8M12 8v8"></path></svg>
-                                                @endif
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-icon">
-                                        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2"></path><path d="M17 11h5"></path></svg>
-                                    </div>
-                                    <strong>No se encontraron usuarios</strong>
-                                    <span>Pruebe modificando los filtros de búsqueda.</span>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <section class="usuarios-tabla-card">
+        <div class="usuarios-tabla-cabecera">
+            <div><h3>Usuarios registrados</h3><p>Listado unificado de cuentas institucionales.</p></div>
+            <span class="usuarios-contador">{{ $usuarios->total() }} registros</span>
         </div>
-
-        @if($usuarios->hasPages())
-            <div class="pagination">{{ $usuarios->links() }}</div>
-        @endif
+        <div class="usuarios-scroll"><table class="usuarios-tabla">
+            <thead><tr><th>Colaborador</th><th>Usuario</th><th>Módulo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+            @forelse($usuarios as $usuario)
+                @php
+                    $nombre = trim(($usuario->nombres ?? '') . ' ' . ($usuario->apellidos ?? ''));
+                    $rolNormalizado = strtoupper(trim($usuario->rol_nombre));
+                    $area = in_array($rolNormalizado, $rolesAgentes, true) ? 'Agentes MICOOPE' : (in_array($rolNormalizado, $rolesAgencias, true) ? 'Agencias ECOSABA' : 'Institucional');
+                    $claseArea = $area === 'Agencias ECOSABA' ? 'agencia' : ($area === 'Institucional' ? 'institucional' : '');
+                    $claseEstado = match($usuario->estado) {'ACTIVO' => 'activo', 'BLOQUEADO' => 'bloqueado', default => 'inactivo'};
+                @endphp
+                <tr>
+                    <td><span class="usuarios-nombre">{{ $nombre !== '' ? $nombre : 'Sin nombre registrado' }}</span><span class="usuarios-subtexto">ID #{{ $usuario->id }}</span></td>
+                    <td>{{ $usuario->usuario }}</td>
+                    <td><span class="usuarios-etiqueta {{ $claseArea }}">{{ $area }}</span></td>
+                    <td>{{ $usuario->rol_nombre }}</td>
+                    <td><span class="usuarios-estado {{ $claseEstado }}">{{ $usuario->estado }}</span></td>
+                    <td><div class="usuarios-opciones">
+                        <a href="{{ route('administrador.usuarios.show', $usuario->id) }}" title="Consultar usuario">Ver</a>
+                        <a href="{{ route('administrador.usuarios.edit', $usuario->id) }}" title="Editar usuario">Editar</a>
+                        @if(auth()->id() !== $usuario->id && $usuario->estado !== 'BLOQUEADO')
+                            <form method="POST" action="{{ route('administrador.usuarios.estado', $usuario->id) }}" onsubmit="return confirm(@js($usuario->estado === 'ACTIVO' ? '¿Desea desactivar esta cuenta?' : '¿Desea activar esta cuenta?'));">
+                                @csrf @method('PATCH')
+                                <button type="submit">{{ $usuario->estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}</button>
+                            </form>
+                        @endif
+                    </div></td>
+                </tr>
+            @empty
+                <tr><td colspan="6" class="usuarios-vacio">No se encontraron usuarios con los filtros seleccionados.</td></tr>
+            @endforelse
+            </tbody>
+        </table></div>
+        @if($usuarios->hasPages())<div class="usuarios-paginacion">{{ $usuarios->links() }}</div>@endif
     </section>
 </div>
 @endsection

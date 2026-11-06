@@ -68,6 +68,13 @@ use App\Http\Controllers\Administrador\AgenteController as AgenteAdministradorCo
 use App\Http\Controllers\Administrador\AuditoriaAgentesController as AuditoriaAgentesAdministradorController;
 use App\Http\Controllers\Administrador\AuditoriaSistemaController as AuditoriaSistemaAdministradorController;
 use App\Http\Controllers\Administrador\CumplimientoArqueoController as CumplimientoArqueoAdministradorController;
+use App\Http\Controllers\Administrador\CumplimientoArqueoAgenciaController;
+use App\Http\Controllers\Administrador\AgenciaController as AgenciaAdministradorController;
+use App\Http\Controllers\Administrador\ArqueoAgenciaController as ArqueoAgenciaAdministradorController;
+use App\Http\Controllers\Administrador\ArqueoOrdinarioAgenciaController as ArqueoOrdinarioAgenciaAdministradorController;
+use App\Http\Controllers\Administrador\ArqueoJefaturaCajaController;
+use App\Http\Controllers\Administrador\ArqueoAnuladoAgenciaController;  
+use App\Http\Controllers\Administrador\AuditoriaAgenciaController;
 
 
 use App\Http\Controllers\Auditoria\DashboardController as DashboardAuditoriaController;
@@ -374,9 +381,84 @@ Route::middleware([
             [CumplimientoArqueoAdministradorController::class, 'detalle']
         )->name('cumplimientos.detalle');
 
+        Route::get(
+            '/cumplimientos-agencias',
+            [CumplimientoArqueoAgenciaController::class, 'index']
+        )->name('cumplimientos-agencias.index');
+
+        Route::get(
+            '/cumplimientos-agencias/detalle',
+            [CumplimientoArqueoAgenciaController::class, 'detalle']
+        )->name('cumplimientos-agencias.detalle');
+
+                Route::get(
+            '/agencias',
+            [AgenciaAdministradorController::class, 'index']
+        )->name('agencias.index');
+
+        Route::get(
+            '/agencias/crear',
+            [AgenciaAdministradorController::class, 'create']
+        )->name('agencias.create');
+
+        Route::post(
+            '/agencias',
+            [AgenciaAdministradorController::class, 'store']
+        )->name('agencias.store');
+
+        Route::get(
+            '/agencias/{agencia}',
+            [AgenciaAdministradorController::class, 'show']
+        )->whereNumber('agencia')->name('agencias.show');
+
+        Route::get(
+            '/agencias/{agencia}/editar',
+            [AgenciaAdministradorController::class, 'edit']
+        )->whereNumber('agencia')->name('agencias.edit');
+
+        Route::put(
+            '/agencias/{agencia}',
+            [AgenciaAdministradorController::class, 'update']
+        )->whereNumber('agencia')->name('agencias.update');
+
+        Route::patch(
+            '/agencias/{agencia}/estado',
+            [AgenciaAdministradorController::class, 'cambiarEstado']
+        )->whereNumber('agencia')->name('agencias.estado');
 
 
+         Route::get(
+            '/arqueos-agencias',
+            [ArqueoAgenciaAdministradorController::class, 'index']
+        )->name('arqueos-agencias.index');
 
+        Route::get(
+            '/arqueos-agencias/{arqueo}',
+            [ArqueoAgenciaAdministradorController::class, 'show']
+        )->whereNumber('arqueo')->name('arqueos-agencias.show');
+
+        Route::get(
+            '/arqueos-agencias/{arqueo}/imprimir',
+            [ArqueoAgenciaAdministradorController::class, 'imprimir']
+        )->whereNumber('arqueo')->name('arqueos-agencias.imprimir');
+
+        Route::get(
+            '/arqueos-agencias/ordinarios',
+            [ArqueoOrdinarioAgenciaAdministradorController::class, 'index']
+        )->name('arqueos-agencias.ordinarios');    
+
+        Route::get(
+            '/arqueos-agencias/jefatura',
+            [ArqueoJefaturaCajaController::class, 'index']
+        )->name('arqueos-agencias.jefatura');
+
+        Route::get('/arqueos-agencias/anulados', [ArqueoAnuladoAgenciaController::class, 'index'])
+       ->name('arqueos-agencias.anulados');
+
+       Route::get(
+            '/auditoria-agencias',
+            [AuditoriaAgenciaController::class, 'index']
+        )->name('auditoria-agencias.index');
 
     });
 

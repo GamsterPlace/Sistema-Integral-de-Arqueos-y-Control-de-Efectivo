@@ -42,6 +42,20 @@
     .footer-note{color:#7c8d99;font-size:10px}.actions{display:flex;justify-content:flex-end;gap:10px}
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:41px;padding:0 15px;border:0;border-radius:10px;font-size:10.5px;font-weight:800;text-decoration:none;cursor:pointer;transition:.2s ease}
     .btn svg{width:16px;height:16px}.primary{background:var(--azul-principal);color:#fff}.primary:hover{background:var(--azul-secundario);color:#fff;box-shadow:0 7px 16px rgba(22,76,150,.16)}.secondary{background:#edf2f5;color:#3d596f}.secondary:hover{background:#e3eaf0;color:#29485f}
+
+    .agency-panel{background:#fbfefd}
+    .agency-notice{padding:12px 14px;background:#eef7ff;border:1px solid #d7e7f5;border-radius:10px;color:#345b79;font-size:11px;line-height:1.6;margin-bottom:16px}
+    .agency-history{overflow-x:auto;margin-bottom:18px}
+    .agency-table{width:100%;min-width:700px;border-collapse:collapse;font-size:11px}
+    .agency-table th,.agency-table td{padding:11px;border-bottom:1px solid #e4ecf2;text-align:left}
+    .agency-table th{background:#f1f6fa;color:#3c5970;font-weight:800}
+    .agency-empty{color:#8293a0;font-size:11px;padding:12px 0}
+    .agency-new{margin-top:14px;border-top:1px solid #e3edf2;padding-top:17px}
+    .agency-new[hidden],.agency-panel[hidden]{display:none!important}
+    .agency-toggle{display:inline-flex;align-items:center;gap:8px;border:1px solid #c9ddeb;background:#eef6ff;color:#1b5284;border-radius:9px;padding:11px 15px;font-weight:800;font-size:11px;cursor:pointer}
+    .agency-new .field{min-width:0}
+    .agency-new textarea{width:100%;min-height:80px;padding:12px;border:1px solid #ced9e1;border-radius:10px;font:inherit;font-size:12px;resize:vertical}
+    .agency-new .field-help{line-height:1.6}
     @media(max-width:700px){.form-grid,.account-summary{grid-template-columns:1fr}.form-intro,.form-footer{align-items:flex-start;flex-direction:column}.actions{width:100%;flex-direction:column}.btn{width:100%}}
 </style>
 @endpush
@@ -50,6 +64,8 @@
 @php
     $nombreActual = trim(($usuario->nombres ?? '') . ' ' . ($usuario->apellidos ?? ''));
     $estadoActual = old('estado', $usuario->estado);
+    $rolesAgencia = ['RECEPTOR', 'JEFECAJA', 'SUBJEFECAJA', 'JEFEAGENCIA'];
+    $tieneHistorialAgencia = $asignaciones->isNotEmpty();
 @endphp
 
 <div class="user-form-page">
@@ -152,7 +168,7 @@
                     <label for="rol_id">Rol <span class="required">*</span></label>
                     <select id="rol_id" name="rol_id" required>
                         @foreach($roles as $rol)
-                            <option value="{{ $rol->id }}" @selected((int) old('rol_id', $usuario->rol_id) === (int) $rol->id)>
+                            <option value="{{ $rol->id }}" data-es-agencia="{{ in_array(strtoupper(trim($rol->nombre)), $rolesAgencia, true) ? '1' : '0' }}" @selected((int) old('rol_id', $usuario->rol_id) === (int) $rol->id)>
                                 {{ $rol->nombre }}
                             </option>
                         @endforeach
@@ -165,6 +181,9 @@
                     <select id="estado" name="estado" required>
                         <option value="ACTIVO" @selected(old('estado', $usuario->estado) === 'ACTIVO')>ACTIVO</option>
                         <option value="INACTIVO" @selected(old('estado', $usuario->estado) === 'INACTIVO')>INACTIVO</option>
+                        @if($usuario->estado === 'BLOQUEADO')
+                            <option value="BLOQUEADO" @selected(old('estado', $usuario->estado) === 'BLOQUEADO')>BLOQUEADO</option>
+                        @endif
                     </select>
                     <span class="field-help">Utilice INACTIVO para restringir el acceso operativo de la cuenta.</span>
                 </div>
@@ -192,6 +211,86 @@
             </div>
         </section>
 
+
+        <section class="form-section agency-panel" id="agencyPanel" hidden>
+            <div class="section-title">
+                <div class="section-icon access">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 21V10h8v11M3 10h18"/></svg>
+                </div>
+                <div>
+                    <h3>Asignaciones a Agencias ECOSABA</h3>
+                    <p>Historial institucional del colaborador y registro opcional de una nueva asignación.</p>
+                </div>
+            </div>
+
+            <div class="agency-notice">
+                Las asignaciones anteriores se conservan. Una nueva asignación no modifica ni finaliza automáticamente las existentes.
+                Las ventanillas y los turnos se administran en el módulo operativo correspondiente.
+                @if($tieneHistorialAgencia)
+                    <strong>Este usuario tiene historial de agencia: el cambio de rol está restringido para proteger sus registros.</strong>
+                @endif
+            </div>
+
+            @if($asignaciones->isNotEmpty())
+                <div class="agency-history">
+                    <table class="agency-table">
+                        <thead><tr><th>Agencia</th><th>Cargo</th><th>Tipo</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
+                        <tbody>
+                        @foreach($asignaciones as $asignacion)
+                            <tr>
+                                <td>{{ $asignacion->agencia_codigo }} — {{ $asignacion->agencia_nombre }}</td>
+                                <td>{{ str_replace('_', ' ', $asignacion->cargo) }}</td>
+                                <td>{{ $asignacion->tipo }}</td>
+                                <td>{{ $asignacion->fecha_inicio }}</td>
+                                <td>{{ $asignacion->fecha_fin ?: 'Sin fecha de fin' }}</td>
+                                <td>{{ $asignacion->estado ? 'Registrada activa' : 'Inactiva' }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="agency-empty">Este usuario todavía no tiene asignaciones registradas a agencias.</p>
+            @endif
+
+            <button type="button" class="agency-toggle" id="toggleAgency" aria-expanded="false">+ Registrar nueva asignación</button>
+
+            <div class="agency-new" id="newAgency" hidden>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="agencia_id">Agencia <span class="required">*</span></label>
+                        <select name="agencia_id" id="agencia_id" disabled>
+                            <option value="">Seleccione una agencia</option>
+                            @foreach($agencias as $agencia)
+                                <option value="{{ $agencia->id }}" @selected(old('agencia_id') == $agencia->id)>{{ $agencia->codigo }} — {{ $agencia->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="tipo_asignacion">Tipo <span class="required">*</span></label>
+                        <select name="tipo_asignacion" id="tipo_asignacion" disabled>
+                            <option value="PERMANENTE" @selected(old('tipo_asignacion', 'PERMANENTE') === 'PERMANENTE')>Permanente</option>
+                            <option value="TEMPORAL" @selected(old('tipo_asignacion') === 'TEMPORAL')>Temporal</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="fecha_inicio">Fecha de inicio <span class="required">*</span></label>
+                        <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ old('fecha_inicio', now()->toDateString()) }}" disabled>
+                    </div>
+                    <div class="field">
+                        <label for="fecha_fin">Fecha de finalización <span class="required" id="requiredEnd" hidden>*</span></label>
+                        <input type="date" name="fecha_fin" id="fecha_fin" value="{{ old('fecha_fin') }}" disabled>
+                        <span class="field-help">Obligatoria para asignaciones temporales.</span>
+                    </div>
+                    <div class="field" style="grid-column:1/-1">
+                        <label for="motivo_asignacion">Motivo u observaciones</label>
+                        <textarea name="motivo_asignacion" id="motivo_asignacion" maxlength="2000" disabled>{{ old('motivo_asignacion') }}</textarea>
+                        <span class="field-help">El registro de esta nueva asignación será auditado junto con la edición del usuario.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <div class="form-footer">
             <span class="footer-note"><span class="required">*</span> Campos obligatorios. La contraseña no se modifica desde este formulario.</span>
 
@@ -214,3 +313,47 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const role = document.getElementById('rol_id');
+    const panel = document.getElementById('agencyPanel');
+    const toggle = document.getElementById('toggleAgency');
+    const fields = document.getElementById('newAgency');
+    const agency = document.getElementById('agencia_id');
+    const type = document.getElementById('tipo_asignacion');
+    const start = document.getElementById('fecha_inicio');
+    const end = document.getElementById('fecha_fin');
+    const requiredEnd = document.getElementById('requiredEnd');
+    const motive = document.getElementById('motivo_asignacion');
+    const hasHistory = @json($tieneHistorialAgencia);
+    let editingAssignment = @json(old('agencia_id') !== null);
+
+    function refresh() {
+        const option = role.options[role.selectedIndex];
+        const isAgency = option?.dataset.esAgencia === '1';
+        panel.hidden = !isAgency;
+        if (!isAgency) editingAssignment = false;
+        fields.hidden = !isAgency || !editingAssignment;
+        toggle.textContent = editingAssignment ? 'Cancelar nueva asignación' : '+ Registrar nueva asignación';
+        toggle.setAttribute('aria-expanded', editingAssignment ? 'true' : 'false');
+        const enabled = isAgency && editingAssignment;
+        for (const field of [agency, type, start, end, motive]) field.disabled = !enabled;
+        agency.required = enabled;
+        type.required = enabled;
+        start.required = enabled;
+        end.required = enabled && type.value === 'TEMPORAL';
+        requiredEnd.hidden = !end.required;
+    }
+
+    toggle.addEventListener('click', () => {
+        editingAssignment = !editingAssignment;
+        refresh();
+    });
+    role.addEventListener('change', refresh);
+    type.addEventListener('change', refresh);
+    refresh();
+});
+</script>
+@endpush
