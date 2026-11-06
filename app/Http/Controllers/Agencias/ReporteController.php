@@ -8,8 +8,10 @@ use App\Services\Agencias\ReporteriaAgenciasService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
 
 class ReporteController extends Controller
 {
@@ -22,12 +24,6 @@ class ReporteController extends Controller
         'Administrador',
     ];
 
-    /**
-     * Layout correspondiente a cada rol autorizado.
-     *
-     * Los nombres deben coincidir con los archivos
-     * existentes en resources/views/layouts/.
-     */
     private const LAYOUTS = [
         'JefeCaja' => 'layouts.jefe-caja',
         'SubjefeCaja' => 'layouts.subjefe-caja',
@@ -42,18 +38,9 @@ class ReporteController extends Controller
     ) {
     }
 
-    /**
-     * Centro de Reportes.
-     *
-     * Vista compartida para todos los roles autorizados,
-     * con layout institucional según el usuario autenticado.
-     */
     public function index(Request $request): View
     {
         $usuario = $this->usuarioAutorizado($request);
-
-        $layoutReportes = $this->resolverLayoutReportes($usuario);
-
         $filtros = $this->reporteria->filtros($request);
 
         $datos = $this->reporteria->generar(
@@ -65,31 +52,19 @@ class ReporteController extends Controller
         return view('agencias.reportes.index', [
             ...$datos,
             ...$filtros,
-
             'filtros' => $filtros,
-
             'tiposReporte' => $this->reporteria->tiposReporte(),
-
             'catalogos' => $this->reporteria->catalogos(
                 $usuario,
                 $filtros
             ),
-
-            // Layout correspondiente al rol autenticado.
-            'layoutReportes' => $layoutReportes,
+            'layoutReportes' => $this->resolverLayout($usuario),
         ]);
     }
 
-    /**
-     * Exportar el reporte a PDF.
-     *
-     * Se conserva la vista independiente para impresión,
-     * sin utilizar los layouts del sistema.
-     */
     public function imprimir(Request $request): Response
     {
         $usuario = $this->usuarioAutorizado($request);
-
         $filtros = $this->reporteria->filtros($request);
 
         $datos = $this->reporteria->generar(
@@ -100,11 +75,13 @@ class ReporteController extends Controller
 
         $pdf = Pdf::loadView('agencias.reportes.pdf', [
             ...$datos,
-
             'titulo' => $this->reporteria
                 ->tiposReporte()[$filtros['reporte']],
-
             'filtros' => $filtros,
+            'catalogos' => $this->reporteria->catalogos(
+                $usuario,
+                $filtros
+            ),
         ])->setPaper('letter', 'landscape');
 
         return $pdf->stream(
@@ -112,16 +89,9 @@ class ReporteController extends Controller
         );
     }
 
-    /**
-     * Exportar el reporte a CSV.
-     *
-     * Se conserva la codificación UTF-8 con BOM
-     * y el separador de punto y coma.
-     */
     public function csv(Request $request): StreamedResponse
     {
         $usuario = $this->usuarioAutorizado($request);
-
         $filtros = $this->reporteria->filtros($request);
 
         $datos = $this->reporteria->generar(
@@ -135,10 +105,11 @@ class ReporteController extends Controller
                 $salida = fopen('php://output', 'w');
 
                 if ($salida === false) {
-                    return;
+                    throw new RuntimeException(
+                        'No fue posible generar el archivo CSV.'
+                    );
                 }
 
-                // BOM para compatibilidad con Excel.
                 fwrite($salida, "\xEF\xBB\xBF");
 
                 fputcsv(
@@ -151,16 +122,11 @@ class ReporteController extends Controller
                     $valores = [];
 
                     foreach ($datos['columnas'] as $campo => $titulo) {
-                        if ($campo === 'posicion') {
-                            $valores[] = $indice + 1;
-                            continue;
-                        }
+                        $valor = $campo === 'posicion'
+                            ? $indice + 1
+                            : data_get($fila, $campo, '');
 
-                        $valores[] = data_get(
-                            $fila,
-                            $campo,
-                            ''
-                        );
+                        $valores[] = $this->valorCsv($valor);
                     }
 
                     fputcsv($salida, $valores, ';');
@@ -175,13 +141,214 @@ class ReporteController extends Controller
         );
     }
 
-    /**
-     * Verificar que el usuario tenga autorización
-     * para acceder al Centro de Reportes.
-     */
+    public function excel(Request $request): Response
+    {
+        $usuario = $this->usuarioAutorizado($request);
+        $filtros = $this->reporteria->filtros($request);
+
+        $datos = $this->reporteria->generar(
+            $usuario,
+            $filtros,
+            false
+        );
+
+        abort_unless(
+            class_exists(ZipArchive::class),
+            500,
+            'La extensión PHP ZIP es necesaria para exportar Excel.'
+        );
+
+        $archivo = tempnam(
+            sys_get_temp_dir(),
+            'arqueos_agencias_'
+        );
+
+        if ($archivo === false) {
+            throw new RuntimeException(
+                'No fue posible crear el archivo temporal Excel.'
+            );
+        }
+
+        $zip = new ZipArchive();
+
+        if ($zip->open($archivo, ZipArchive::OVERWRITE) !== true) {
+            @unlink($archivo);
+
+            throw new RuntimeException(
+                'No fue posible preparar el archivo Excel.'
+            );
+        }
+
+        try {
+            $zip->addFromString(
+                '[Content_Types].xml',
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                . '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                . '<Default Extension="xml" ContentType="application/xml"/>'
+                . '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+                . '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+                . '</Types>'
+            );
+
+            $zip->addFromString(
+                '_rels/.rels',
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+                . '</Relationships>'
+            );
+
+            $zip->addFromString(
+                'xl/workbook.xml',
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+                . 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+                . '<sheets><sheet name="Reporte de agencias" sheetId="1" r:id="rId1"/></sheets>'
+                . '</workbook>'
+            );
+
+            $zip->addFromString(
+                'xl/_rels/workbook.xml.rels',
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                . '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+                . '</Relationships>'
+            );
+
+            $xml = fopen('php://temp/maxmemory:5242880', 'w+');
+
+            if ($xml === false) {
+                throw new RuntimeException(
+                    'No fue posible generar la hoja Excel.'
+                );
+            }
+
+            fwrite(
+                $xml,
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                . '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                . '<sheetData>'
+            );
+
+            $numeroFila = 1;
+
+            $escribirFila = function (array $valores) use (
+                $xml,
+                &$numeroFila
+            ): void {
+                fwrite($xml, '<row r="' . $numeroFila . '">');
+
+                foreach (array_values($valores) as $indice => $valor) {
+                    $numero = $indice + 1;
+                    $columna = '';
+
+                    while ($numero > 0) {
+                        $numero--;
+
+                        $columna = chr(
+                            65 + ($numero % 26)
+                        ) . $columna;
+
+                        $numero = intdiv($numero, 26);
+                    }
+
+                    $referencia = $columna . $numeroFila;
+
+                    $texto = (string) ($valor ?? '');
+
+                    $texto = preg_replace(
+                        '/[\x00-\x08\x0B\x0C\x0E-\x1F]/u',
+                        '',
+                        $texto
+                    ) ?? '';
+
+                    // Impide que los textos controlados por usuarios
+                    // se interpreten como fórmulas al abrir el XLSX.
+                    $texto = $this->valorCsv($texto);
+
+                    $texto = htmlspecialchars(
+                        $texto,
+                        ENT_XML1 | ENT_QUOTES,
+                        'UTF-8'
+                    );
+
+                    fwrite(
+                        $xml,
+                        '<c r="' . $referencia . '" t="inlineStr">'
+                        . '<is><t xml:space="preserve">'
+                        . $texto
+                        . '</t></is></c>'
+                    );
+                }
+
+                fwrite($xml, '</row>');
+
+                $numeroFila++;
+            };
+
+            $escribirFila(
+                array_values($datos['columnas'])
+            );
+
+            foreach ($datos['resultados'] as $indice => $fila) {
+                $valores = [];
+
+                foreach ($datos['columnas'] as $campo => $titulo) {
+                    $valores[] = $campo === 'posicion'
+                        ? $indice + 1
+                        : data_get($fila, $campo, '');
+                }
+
+                $escribirFila($valores);
+            }
+
+            fwrite($xml, '</sheetData></worksheet>');
+
+            rewind($xml);
+
+            $contenido = stream_get_contents($xml);
+
+            fclose($xml);
+
+            if (
+                $contenido === false
+                || !$zip->addFromString(
+                    'xl/worksheets/sheet1.xml',
+                    $contenido
+                )
+            ) {
+                throw new RuntimeException(
+                    'No fue posible escribir la hoja Excel.'
+                );
+            }
+        } catch (\Throwable $e) {
+            $zip->close();
+            @unlink($archivo);
+
+            throw $e;
+        }
+
+        if (!$zip->close()) {
+            @unlink($archivo);
+
+            throw new RuntimeException(
+                'No fue posible finalizar el archivo Excel.'
+            );
+        }
+
+        return response()->download(
+            $archivo,
+            $this->nombreArchivo($filtros, 'xlsx'),
+            [
+                'Content-Type' =>
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]
+        )->deleteFileAfterSend(true);
+    }
+
     private function usuarioAutorizado(Request $request): Usuario
     {
-        /** @var Usuario|null $usuario */
         $usuario = $request->user();
 
         abort_unless(
@@ -194,36 +361,31 @@ class ReporteController extends Controller
 
         abort_unless(
             $usuario->estado === 'ACTIVO'
-                && $usuario->rol
-                && $usuario->rol->estado
-                && in_array(
-                    $usuario->rol->nombre,
-                    self::ROLES,
-                    true
-                ),
+            && $usuario->rol
+            && (bool) $usuario->rol->estado
+            && in_array(
+                $usuario->rol->nombre,
+                self::ROLES,
+                true
+            ),
             403,
-            'No tiene autorización para consultar los reportes de agencias.'
+            'No tiene autorización para consultar reportes de agencias.'
         );
 
         return $usuario;
     }
 
-    /**
-     * Determinar el layout institucional
-     * correspondiente al rol autenticado.
-     */
-    private function resolverLayoutReportes(Usuario $usuario): string
+    private function resolverLayout(Usuario $usuario): string
     {
-        $nombreRol = $usuario->rol?->nombre;
+        $rol = $usuario->rol?->nombre;
+
+        $layout = self::LAYOUTS[$rol] ?? null;
 
         abort_unless(
-            is_string($nombreRol)
-                && array_key_exists($nombreRol, self::LAYOUTS),
+            $layout !== null,
             403,
-            'Su rol no tiene un layout autorizado para reportes.'
+            'Su rol no tiene un layout autorizado.'
         );
-
-        $layout = self::LAYOUTS[$nombreRol];
 
         abort_unless(
             view()->exists($layout),
@@ -234,9 +396,6 @@ class ReporteController extends Controller
         return $layout;
     }
 
-    /**
-     * Generar nombre del archivo exportado.
-     */
     private function nombreArchivo(
         array $filtros,
         string $extension
@@ -247,5 +406,16 @@ class ReporteController extends Controller
             . now()->format('Ymd-His')
             . '.'
             . $extension;
+    }
+
+    private function valorCsv(mixed $valor): string
+    {
+        $texto = (string) ($valor ?? '');
+
+        if (preg_match('/^\s*[=+\-@\t\r\n]/u', $texto)) {
+            return "'" . $texto;
+        }
+
+        return $texto;
     }
 }

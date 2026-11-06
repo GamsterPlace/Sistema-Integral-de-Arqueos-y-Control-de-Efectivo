@@ -1357,7 +1357,20 @@ Route::middleware(['auth', 'password.actualizada'])
     ->name('agencias.reportes.')
     ->controller(\App\Http\Controllers\Agencias\ReporteController::class)
     ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/pdf', 'imprimir')->name('pdf');
-        Route::get('/csv', 'csv')->name('csv');
+
+        // Centro de reportes.
+        Route::get('/', 'index')
+            ->name('index');
+
+        // Exportación PDF.
+        Route::get('/pdf', 'imprimir')
+            ->name('pdf');
+
+        // Exportación CSV.
+        Route::get('/csv', 'csv')
+            ->name('csv');
+
+        // Exportación Excel (.xlsx).
+        Route::get('/excel', 'excel')
+            ->name('excel');
     });

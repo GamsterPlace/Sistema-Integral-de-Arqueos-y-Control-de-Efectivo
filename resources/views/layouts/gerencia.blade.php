@@ -872,9 +872,7 @@
 
             <p class="navigation-label">Agencias ECOSABA</p>
             <div class="navigation-list">
-                <a href="{{ route('gerencia.dashboard') }}#supervision-agencias" class="navigation-link">
-                    <span class="navigation-icon">▦</span> Supervisión de Agencias
-                </a>
+                 
                 <a href="{{ route('gerencia.agencias.arqueos.index') }}" class="navigation-link {{ request()->routeIs('gerencia.agencias.arqueos.index', 'gerencia.agencias.arqueos.show', 'gerencia.agencias.arqueos.imprimir') ? 'active' : '' }}">
                     <span class="navigation-icon">▤</span> Historial de arqueos
                 </a>

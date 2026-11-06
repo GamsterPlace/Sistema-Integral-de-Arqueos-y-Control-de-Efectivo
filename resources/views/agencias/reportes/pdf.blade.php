@@ -4,6 +4,10 @@
     $columnas = $columnas ?? [];
     $metricas = $metricas ?? [];
     $filtros = $filtros ?? [];
+    $catalogos = $catalogos ?? [];
+    $agenciaSeleccionada = collect($catalogos['agencias'] ?? [])->firstWhere('id', (int) ($filtros['agencia_id'] ?? 0));
+    $receptorSeleccionado = collect($catalogos['receptores'] ?? [])->firstWhere('id', (int) ($filtros['receptor_id'] ?? 0));
+    $ventanillaSeleccionada = collect($catalogos['ventanillas'] ?? [])->firstWhere('id', (int) ($filtros['ventanilla_id'] ?? 0));
     $resultados = $resultados ?? collect();
 
     $fechaGeneracion = now()->timezone('America/Guatemala');
@@ -42,15 +46,15 @@
     }
 
     if (!empty($filtros['agencia_id'])) {
-        $filtrosVisibles['Agencia ID'] = $filtros['agencia_id'];
+        $filtrosVisibles['Agencia'] = $agenciaSeleccionada ? ($agenciaSeleccionada->nombre . ' (' . $agenciaSeleccionada->codigo . ')') : ('ID ' . $filtros['agencia_id']);
     }
 
     if (!empty($filtros['receptor_id'])) {
-        $filtrosVisibles['Receptor ID'] = $filtros['receptor_id'];
+        $filtrosVisibles['Receptor'] = $receptorSeleccionado?->nombre ?? ('ID ' . $filtros['receptor_id']);
     }
 
     if (!empty($filtros['ventanilla_id'])) {
-        $filtrosVisibles['Ventanilla ID'] = $filtros['ventanilla_id'];
+        $filtrosVisibles['Ventanilla'] = $ventanillaSeleccionada ? ($ventanillaSeleccionada->codigo . ' — ' . $ventanillaSeleccionada->descripcion) : ('ID ' . $filtros['ventanilla_id']);
     }
 
     if (!empty($filtros['turno'])) {
@@ -115,6 +119,9 @@
 
     $mostrarTotales = !empty($totalesMonetarios)
         && $cantidadRegistros > 0;
+
+    $primeraColumna = array_key_first($columnas);
+    $primeraColumnaMonetaria = in_array($primeraColumna, $columnasMonetarias, true);
 
     $numeroColumnas = max(count($columnas), 1);
 
@@ -512,7 +519,7 @@
 
                             <div class="metric-value">
                                 {{ is_numeric($valor)
-                                    ? number_format((float) $valor, 0)
+                                    ? number_format((float) $valor, (fmod((float) $valor, 1.0) == 0.0 ? 0 : 2), '.', ',')
                                     : $valor }}
                             </div>
                         </td>
@@ -632,7 +639,7 @@
                     <tr>
                         @foreach($columnas as $campo => $encabezado)
                             <td class="{{ in_array($campo, $columnasMonetarias, true) ? 'money' : '' }}">
-                                @if($loop->first)
+                                @if($loop->first && !$primeraColumnaMonetaria)
                                     TOTALES
                                 @elseif(isset($totalesMonetarios[$campo]))
                                     Q {{ number_format(

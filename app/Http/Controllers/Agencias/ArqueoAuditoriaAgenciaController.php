@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Agencias;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArqueoAgencia;
-use App\Models\JornadaReceptor;
+use App\Models\Agencia;
+use App\Models\AsignacionOperativaReceptor;
 use App\Services\Agencias\AccesoAgenciaService;
 use App\Services\Agencias\FirmaArqueoService;
 use App\Services\AuditoriaService;
@@ -26,89 +27,292 @@ class ArqueoAuditoriaAgenciaController extends Controller
     }
     public function index(Request $request, AccesoAgenciaService $acceso): View
     {
-        $this->auditor($request); $ruta='auditoria';
-        $arqueos=ArqueoAgencia::where('tipo','AUDITORIA')->latest('id')->paginate(20);
-        return view('agencias.auditoria.index',compact('arqueos','ruta'));
+        $this->auditor($request);
+        $ruta = 'auditoria';
+
+        $agenciaId = $request->integer('agencia');
+        $receptorId = $request->integer('receptor');
+        $agenciaSeleccionada = null;
+        $receptorSeleccionado = null;
+        $agencias = collect();
+        $receptores = collect();
+        $arqueos = null;
+
+        if (!$agenciaId) {
+            $agencias = Agencia::query()->orderBy('nombre')->get();
+            $resumenAgencias = ArqueoAgencia::query()
+                ->where('tipo', 'AUDITORIA')
+                ->selectRaw('agencia_id, COUNT(*) total, SUM(CASE WHEN estado = ? THEN 1 ELSE 0 END) certificados, SUM(CASE WHEN estado = ? THEN 1 ELSE 0 END) anulados', ['CERTIFICADO', 'ANULADO'])
+                ->groupBy('agencia_id')->get()->keyBy('agencia_id');
+            $receptoresPorAgencia = AsignacionOperativaReceptor::query()
+                ->vigentes()->select('agencia_id','receptor_usuario_id')->distinct()->get()
+                ->groupBy('agencia_id')->map(fn ($items) => $items->count());
+            return view('agencias.auditoria.index', compact(
+                'ruta', 'agencias', 'resumenAgencias', 'receptoresPorAgencia',
+                'agenciaSeleccionada', 'receptorSeleccionado', 'receptores', 'arqueos'
+            ));
+        }
+
+        $agenciaSeleccionada = Agencia::query()->findOrFail($agenciaId);
+
+        if (!$receptorId) {
+            $idsActuales = AsignacionOperativaReceptor::query()
+                ->where('agencia_id', $agenciaId)->vigentes()
+                ->pluck('receptor_usuario_id');
+            $idsHistoricos = ArqueoAgencia::query()->where('tipo', 'AUDITORIA')
+                ->where('agencia_id', $agenciaId)->pluck('receptor_usuario_id');
+            $ids = $idsActuales->merge($idsHistoricos)->unique()->values();
+            $receptores = \App\Models\Usuario::query()
+                ->whereIn('id', $ids)->get()->sortBy('nombre_completo')->values();
+            $resumenReceptores = ArqueoAgencia::query()
+                ->where('tipo', 'AUDITORIA')->where('agencia_id', $agenciaId)
+                ->selectRaw('receptor_usuario_id, COUNT(*) total, SUM(CASE WHEN estado = ? THEN 1 ELSE 0 END) certificados, SUM(CASE WHEN estado = ? THEN 1 ELSE 0 END) anulados, MAX(fecha_operativa) ultima_fecha', ['CERTIFICADO','ANULADO'])
+                ->groupBy('receptor_usuario_id')->get()->keyBy('receptor_usuario_id');
+            $asignacionesReceptor = AsignacionOperativaReceptor::query()
+                ->with(['ventanilla', 'turno'])->where('agencia_id', $agenciaId)
+                ->vigentes()->get()->groupBy('receptor_usuario_id');
+            return view('agencias.auditoria.index', compact(
+                'ruta', 'agencias', 'agenciaSeleccionada', 'receptorSeleccionado',
+                'receptores', 'resumenReceptores', 'asignacionesReceptor', 'arqueos'
+            ));
+        }
+
+        $receptorSeleccionado = \App\Models\Usuario::query()->findOrFail($receptorId);
+        $existe = AsignacionOperativaReceptor::query()->where('agencia_id', $agenciaId)
+            ->where('receptor_usuario_id', $receptorId)->exists()
+            || ArqueoAgencia::query()->where('tipo', 'AUDITORIA')
+                ->where('agencia_id', $agenciaId)->where('receptor_usuario_id', $receptorId)->exists();
+        abort_unless($existe, 404);
+
+        $filtros = $request->validate([
+            'buscar' => ['nullable','string','max:100'],
+            'estado' => ['nullable','in:PENDIENTE_FIRMA_RECEPTOR,PENDIENTE,CERTIFICADO,ANULADO'],
+            'desde' => ['nullable','date'],
+            'hasta' => ['nullable','date','after_or_equal:desde'],
+            'ventanilla' => ['nullable','integer'],
+            'diferencia' => ['nullable','in:todos,con,sin'],
+        ]);
+
+        $consulta = ArqueoAgencia::query()->where('tipo','AUDITORIA')
+            ->where('agencia_id',$agenciaId)->where('receptor_usuario_id',$receptorId);
+        if (filled($filtros['buscar'] ?? null)) {
+            $buscar = $filtros['buscar'];
+            $consulta->where('numero_arqueo','like','%'.$buscar.'%');
+        }
+        if (filled($filtros['estado'] ?? null)) $consulta->where('estado',$filtros['estado']);
+        if (filled($filtros['desde'] ?? null)) $consulta->whereDate('fecha_operativa','>=',$filtros['desde']);
+        if (filled($filtros['hasta'] ?? null)) $consulta->whereDate('fecha_operativa','<=',$filtros['hasta']);
+        if (filled($filtros['ventanilla'] ?? null)) $consulta->where('ventanilla_id',$filtros['ventanilla']);
+        if (($filtros['diferencia'] ?? 'todos') === 'con') $consulta->where('diferencia','!=',0);
+        if (($filtros['diferencia'] ?? 'todos') === 'sin') $consulta->where('diferencia',0);
+        $arqueos = $consulta->orderByDesc('fecha_operativa')->orderByDesc('id')
+            ->paginate(15)->withQueryString();
+        $ventanillas = \App\Models\VentanillaAgencia::query()
+            ->where('agencia_id',$agenciaId)->orderBy('codigo')->get();
+
+        return view('agencias.auditoria.index', compact(
+            'ruta','agencias','agenciaSeleccionada','receptorSeleccionado',
+            'receptores','arqueos','ventanillas'
+        ));
     }
+
     public function create(Request $request, AccesoAgenciaService $acceso): View
     {
-        $this->auditor($request); $ruta='auditoria';
-        $jornadas=JornadaReceptor::with(['agencia','ventanilla','receptor','turno','asignacionPersonal'])
-            ->whereDate('fecha_operativa',today()->toDateString())
-            ->whereHas('asignacionPersonal',fn($q)=>$q->where('cargo','RECEPTOR')->where('estado',true))
-            ->orderBy('agencia_id')->orderBy('inicio_programado')->get()
-            ->filter(fn($j)=>(bool)$j->agencia?->estado && (bool)$j->ventanilla?->estado);
-        return view('agencias.auditoria.create',['jornadas'=>$jornadas,'ruta'=>$ruta,'billetes'=>self::BILLETES,'monedas'=>self::MONEDAS]);
-    }
-    public function store(Request $request, AccesoAgenciaService $acceso, FirmaArqueoService $firmas, AuditoriaService $auditoria)
-    {
-        $this->auditor($request); $ruta='auditoria';
-        $d=$request->validate([
-            'jornada_id'=>['required','integer','exists:jornadas_receptor,id'],
-            'billetes'=>['required','array'],'billetes.*'=>['required','integer','min:0','max:10000000'],
-            'monedas'=>['required','array'],'monedas.*'=>['required','integer','min:0','max:10000000'],
-            'total_corte'=>['required','numeric','min:0','max:999999999999.99','decimal:0,2'],
-            'justificacion_diferencia'=>['nullable','string','max:2000'],
-            'observaciones'=>['nullable','string','max:5000'],
-            'confirmar'=>['accepted'],
+        $this->auditor($request);
+
+        $agencias = Agencia::query()
+            ->where('estado', true)
+            ->orderBy('nombre')
+            ->get();
+
+        $asignaciones = $this->asignacionesDisponibles()->get();
+
+        return view('agencias.auditoria.create', [
+            'ruta' => 'auditoria',
+            'agencias' => $agencias,
+            'asignaciones' => $asignaciones,
+            'billetes' => self::BILLETES,
+            'monedas' => self::MONEDAS,
         ]);
-        if(array_diff(array_keys($d['billetes']),self::BILLETES) || array_diff(array_keys($d['monedas']),self::MONEDAS))
-            throw ValidationException::withMessages(['billetes'=>'Denominaciones no permitidas.']);
-        $detalles=[];$sumBil=0;$sumMon=0;
-        foreach([['BILLETE',self::BILLETES],['MONEDA',self::MONEDAS]] as [$tipo,$valores]){
-            foreach($valores as $v){
-                $centavos=(int)round((float)$v*100);$cantidad=(int)($d[$tipo==='BILLETE'?'billetes':'monedas'][$v]??0);
-                $subtotal=$centavos*$cantidad;
-                if($tipo==='BILLETE')$sumBil+=$subtotal;else $sumMon+=$subtotal;
-                $detalles[]=['tipo'=>$tipo,'denominacion'=>number_format($centavos/100,2,'.',''),'concepto'=>null,'cantidad'=>$cantidad,'subtotal'=>number_format($subtotal/100,2,'.','')];
+    }
+
+    private function asignacionesDisponibles()
+    {
+        $hoy = today()->toDateString();
+
+        return AsignacionOperativaReceptor::query()
+            ->with(['agencia', 'receptor.datosPersonales', 'ventanilla', 'turno', 'asignacionPersonal'])
+            ->where('estado', true)
+            ->whereDate('fecha_inicio', '<=', $hoy)
+            ->where(function ($q) use ($hoy) {
+                $q->whereNull('fecha_fin')->orWhereDate('fecha_fin', '>=', $hoy);
+            })
+            ->whereHas('agencia', fn ($q) => $q->where('estado', true))
+            ->whereHas('ventanilla', fn ($q) => $q->where('estado', true))
+            ->whereHas('turno', fn ($q) => $q->where('estado', true))
+            ->whereHas('asignacionPersonal', function ($q) use ($hoy) {
+                $q->where('cargo', 'RECEPTOR')
+                    ->where('estado', true)
+                    ->whereDate('fecha_inicio', '<=', $hoy)
+                    ->where(function ($q) use ($hoy) {
+                        $q->whereNull('fecha_fin')->orWhereDate('fecha_fin', '>=', $hoy);
+                    });
+            });
+    }
+
+    public function store(
+        Request $request,
+        AccesoAgenciaService $acceso,
+        FirmaArqueoService $firmas,
+        AuditoriaService $auditoria
+    ) {
+        $this->auditor($request);
+
+        $d = $request->validate([
+            'asignacion_operativa_id' => ['required', 'integer', 'exists:asignaciones_operativas_receptor,id'],
+            'billetes' => ['required', 'array'],
+            'billetes.*' => ['required', 'integer', 'min:0', 'max:10000000'],
+            'monedas' => ['required', 'array'],
+            'monedas.*' => ['required', 'integer', 'min:0', 'max:10000000'],
+            'total_corte' => ['required', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
+            'justificacion_diferencia' => ['nullable', 'string', 'max:2000'],
+            'observaciones' => ['nullable', 'string', 'max:5000'],
+            'confirmar' => ['accepted'],
+        ]);
+
+        foreach (['billetes' => self::BILLETES, 'monedas' => self::MONEDAS] as $campo => $permitidas) {
+            if (array_diff(array_keys($d[$campo]), $permitidas)
+                || array_diff($permitidas, array_keys($d[$campo]))) {
+                throw ValidationException::withMessages([
+                    $campo => 'Las denominaciones enviadas no coinciden con las permitidas.',
+                ]);
             }
         }
-        $total=$sumBil+$sumMon;
-        $corte=(int)round((float)$d['total_corte']*100);
-        $dif=$total-$corte;
-        if($total>99999999999999 || abs($dif)>99999999999999)
-            throw ValidationException::withMessages(['billetes'=>'Monto fuera del límite permitido.']);
-        if($dif!==0 && trim((string)($d['justificacion_diferencia']??''))==='')
-            throw ValidationException::withMessages(['justificacion_diferencia'=>'Justifique la diferencia.']);
-        $arqueo=DB::transaction(function()use($request,$d,$detalles,$sumBil,$sumMon,$total,$corte,$dif,$firmas,$auditoria){
-            $j=JornadaReceptor::with(['agencia','ventanilla','turno','receptor','asignacionPersonal'])->lockForUpdate()->findOrFail($d['jornada_id']);
-            $a=$j->asignacionPersonal;
-            abort_unless($j->fecha_operativa->toDateString()===today()->toDateString()
-                && $a && $a->estado && $a->cargo==='RECEPTOR' && (int)$a->usuario_id===(int)$j->receptor_usuario_id
-                && (int)$a->agencia_id===(int)$j->agencia_id && $a->fecha_inicio->toDateString()<=$j->fecha_operativa->toDateString()
-                && (!$a->fecha_fin || $a->fecha_fin->toDateString()>=$j->fecha_operativa->toDateString())
-                && $j->agencia?->estado && $j->ventanilla?->estado && (int)$j->ventanilla->agencia_id===(int)$j->agencia_id
-                && $j->turno?->estado,403,'Jornada no autorizada.');
-            // Un arqueo de auditoría pendiente por jornada: evita iniciar otro mientras falta la firma del receptor.
-            if(ArqueoAgencia::where('jornada_id',$j->id)->where('tipo','AUDITORIA')->where('estado','PENDIENTE_FIRMA_RECEPTOR')->exists())
-                throw ValidationException::withMessages(['jornada_id'=>'Ya existe un arqueo de auditoría pendiente de firma para este turno.']);
-            $u=$request->user();$u->loadMissing('rol');
-            $registro=ArqueoAgencia::create([
-                'numero_arqueo'=>'AU-'.now()->format('YmdHis').'-'.strtoupper(Str::random(12)),
-                'agencia_id'=>$j->agencia_id,'ventanilla_id'=>$j->ventanilla_id,'jornada_id'=>$j->id,
-                'receptor_usuario_id'=>$j->receptor_usuario_id,'creado_por'=>$u->id,
 
+        $detalles = [];
+        $sumBil = 0;
+        $sumMon = 0;
 
-                'tipo'=>'AUDITORIA','estado'=>'PENDIENTE_FIRMA_RECEPTOR','fecha_operativa'=>$j->fecha_operativa,
-                'inicio_at'=>now(),'finalizado_at'=>now(),'cierra_turno'=>false,'fuera_fecha_ordinaria'=>false,
-                'agencia_codigo_historico'=>$j->agencia->codigo,'agencia_nombre_historico'=>$j->agencia->nombre,
-                'ventanilla_codigo_historico'=>$j->ventanilla->codigo,
-                'receptor_nombre_historico'=>$j->receptor->nombre_completo,'turno_nombre_historico'=>$j->turno->nombre,
-                'total_billetes'=>number_format($sumBil/100,2,'.',''),'total_monedas'=>number_format($sumMon/100,2,'.',''),
-                'total_otros_valores'=>'0.00','total_arqueado'=>number_format($total/100,2,'.',''),
-                'total_corte'=>number_format($corte/100,2,'.',''),'diferencia'=>number_format($dif/100,2,'.',''),
-                'justificacion_diferencia'=>$d['justificacion_diferencia']??null,'observaciones'=>$d['observaciones']??null,
+        foreach ([['BILLETE', 'billetes', self::BILLETES], ['MONEDA', 'monedas', self::MONEDAS]] as [$tipo, $campo, $valores]) {
+            foreach ($valores as $valor) {
+                $centavos = (int) round((float) $valor * 100);
+                $cantidad = (int) $d[$campo][$valor];
+                $subtotal = $centavos * $cantidad;
 
+                if ($tipo === 'BILLETE') {
+                    $sumBil += $subtotal;
+                } else {
+                    $sumMon += $subtotal;
+                }
+
+                $detalles[] = [
+                    'tipo' => $tipo,
+                    'denominacion' => number_format($centavos / 100, 2, '.', ''),
+                    'concepto' => null,
+                    'cantidad' => $cantidad,
+                    'subtotal' => number_format($subtotal / 100, 2, '.', ''),
+                ];
+            }
+        }
+
+        $total = $sumBil + $sumMon;
+        $corte = (int) round((float) $d['total_corte'] * 100);
+        $dif = $total - $corte;
+
+        if ($total > 99999999999999 || abs($dif) > 99999999999999) {
+            throw ValidationException::withMessages(['billetes' => 'Monto fuera del límite permitido.']);
+        }
+
+        if ($dif !== 0 && trim((string) ($d['justificacion_diferencia'] ?? '')) === '') {
+            throw ValidationException::withMessages(['justificacion_diferencia' => 'Justifique la diferencia.']);
+        }
+
+        $arqueo = DB::transaction(function () use (
+            $request, $d, $detalles, $sumBil, $sumMon, $total, $corte, $dif, $firmas, $auditoria
+        ) {
+            $hoy = today()->toDateString();
+
+            $a = $this->asignacionesDisponibles()
+                ->lockForUpdate()
+                ->find($d['asignacion_operativa_id']);
+
+            if (!$a || !$a->receptor || !$a->asignacionPersonal
+                || (int) $a->asignacionPersonal->usuario_id !== (int) $a->receptor_usuario_id
+                || (int) $a->asignacionPersonal->agencia_id !== (int) $a->agencia_id
+                || (int) $a->ventanilla->agencia_id !== (int) $a->agencia_id) {
+                throw ValidationException::withMessages([
+                    'asignacion_operativa_id' => 'La asignación operativa ya no es válida.',
+                ]);
+            }
+
+            $pendiente = ArqueoAgencia::query()
+                ->where('tipo', 'AUDITORIA')
+                ->where('agencia_id', $a->agencia_id)
+                ->where('ventanilla_id', $a->ventanilla_id)
+                ->where('receptor_usuario_id', $a->receptor_usuario_id)
+                ->whereIn('estado', ['PENDIENTE_FIRMA_RECEPTOR', 'PENDIENTE'])
+                ->exists();
+
+            if ($pendiente) {
+                throw ValidationException::withMessages([
+                    'asignacion_operativa_id' => 'Existe un arqueo de auditoría pendiente para este receptor y ventanilla.',
+                ]);
+            }
+
+            $u = $request->user();
+            $u->loadMissing('rol');
+
+            $registro = ArqueoAgencia::create([
+                'numero_arqueo' => 'AU-'.now()->format('YmdHis').'-'.strtoupper(Str::random(12)),
+                'agencia_id' => $a->agencia_id,
+                'ventanilla_id' => $a->ventanilla_id,
+                'jornada_id' => null,
+                'receptor_usuario_id' => $a->receptor_usuario_id,
+                'creado_por' => $u->id,
+                'tipo' => 'AUDITORIA',
+                'estado' => 'PENDIENTE_FIRMA_RECEPTOR',
+                'fecha_operativa' => $hoy,
+                'inicio_at' => now(),
+                'finalizado_at' => now(),
+                'cierra_turno' => false,
+                'fuera_fecha_ordinaria' => false,
+                'agencia_codigo_historico' => $a->agencia->codigo,
+                'agencia_nombre_historico' => $a->agencia->nombre,
+                'ventanilla_codigo_historico' => $a->ventanilla->codigo,
+                'receptor_nombre_historico' => $a->receptor->nombre_completo ?: $a->receptor->usuario,
+                'turno_nombre_historico' => $a->turno->nombre,
+                'total_billetes' => number_format($sumBil / 100, 2, '.', ''),
+                'total_monedas' => number_format($sumMon / 100, 2, '.', ''),
+                'total_otros_valores' => '0.00',
+                'total_arqueado' => number_format($total / 100, 2, '.', ''),
+                'total_corte' => number_format($corte / 100, 2, '.', ''),
+                'diferencia' => number_format($dif / 100, 2, '.', ''),
+                'justificacion_diferencia' => $d['justificacion_diferencia'] ?? null,
+                'observaciones' => $d['observaciones'] ?? null,
             ]);
+
             $registro->detalles()->createMany($detalles);
-            $firmas->firmarAuditor($registro,$u);
-            $auditoria->registrar($u,'ARQUEOS_AGENCIA','CREAR_ARQUEO_AUDITORIA','arqueos_agencia',$registro->id,
-                'Conteo de auditoría firmado por Auditoría, pendiente de confirmación del receptor.',null,
-                ['numero_arqueo'=>$registro->numero_arqueo,'jornada_id'=>$j->id,'diferencia'=>$registro->diferencia]);
+            $firmas->firmarAuditor($registro, $u);
+
+            $auditoria->registrar(
+                $u, 'ARQUEOS_AGENCIA', 'CREAR_ARQUEO_AUDITORIA', 'arqueos_agencia', $registro->id,
+                'Conteo de auditoría firmado por Auditoría, pendiente de confirmación del receptor.',
+                null,
+                [
+                    'numero_arqueo' => $registro->numero_arqueo,
+                    'asignacion_operativa_id' => $a->id,
+                    'diferencia' => $registro->diferencia,
+                ]
+            );
+
             return $registro;
-        },3);
-        return redirect()->route($ruta.'.auditoria-agencias.show',$arqueo->id)->with('success','Arqueo de auditoría registrado. Pendiente de firma del receptor.');
+        }, 3);
+
+        return redirect()
+            ->route('auditoria.auditoria-agencias.show', $arqueo->id)
+            ->with('success', 'Arqueo de auditoría registrado. Pendiente de firma del receptor.');
     }
+
     public function show(Request $request,int $arqueo,AccesoAgenciaService $acceso,FirmaArqueoService $firmas):View
     {
         $this->auditor($request); $ruta='auditoria';

@@ -83,6 +83,7 @@
 
    $urlPdf = route('agencias.reportes.pdf');
     $urlCsv = route('agencias.reportes.csv');
+    $urlExcel = route('agencias.reportes.excel');
 @endphp
 
 @extends($layoutReportes)
@@ -282,7 +283,7 @@
                     Limpiar filtros
                 </a>
 
-                <a href="{{ $urlPdf . '?' . http_build_query($queryActual) }}" target="_blank" rel="noopener" class="ra-btn ra-btn-pdf">Imprimir PDF</a>
+                <button type="submit" formaction="{{ $urlPdf }}" formtarget="_blank" class="ra-btn ra-btn-pdf">Imprimir PDF</button>
                 <button type="submit" class="ra-btn ra-btn-primary">
                     Generar reporte
                 </button>
@@ -300,7 +301,7 @@
                         </span>
 
                         <strong class="ra-metric-value">
-                            {{ is_numeric($valor) ? number_format((float) $valor, 0) : $valor }}
+                            {{ is_numeric($valor) ? number_format((float) $valor, ((float) $valor != floor((float) $valor) ? 2 : 0)) : $valor }}
                         </strong>
                     </div>
                 @endforeach
@@ -338,6 +339,7 @@
                 >
                     Exportar CSV
                 </a>
+                <a href="{{ $urlExcel . '?' . http_build_query($queryActual) }}" class="ra-btn ra-btn-excel">Exportar Excel</a>
             </div>
         </div>
 
@@ -489,7 +491,7 @@
 .ra-filter-form{padding:18px}
 .ra-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px 14px}
 .ra-field{min-width:0}
-.ra-field label{display:none}
+.ra-field label{display:block;margin-bottom:5px;color:#405a70;font-size:11px;font-weight:700}
 .ra-field select,.ra-field input{display:block;width:100%;min-height:42px;padding:0 12px;border:1px solid #ced9e1;border-radius:10px;background:#fff;color:#30485b;font:inherit;font-size:12px}
 .ra-field select:focus,.ra-field input:focus{outline:2px solid #b9d5f1;outline-offset:0}
 .ra-filter-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
@@ -497,6 +499,7 @@
 .ra-btn-primary{background:#164c96;color:#fff!important}
 .ra-btn-light{background:#edf2f5;color:#3d596f!important}
 .ra-btn-pdf{background:#16834f;color:#fff!important}
+.ra-btn-excel{background:#0d6b46;color:#fff!important}
 .ra-btn-csv{background:#e8f5ed;color:#16834f!important;border:1px solid #c5e8d1}
 .ra-summary-metrics:empty{display:none}
 .ra-metrics-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:20px}

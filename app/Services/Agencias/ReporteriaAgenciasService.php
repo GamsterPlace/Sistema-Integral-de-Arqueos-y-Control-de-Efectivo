@@ -732,179 +732,117 @@ class ReporteriaAgenciasService
         ];
     }
 
-    private function cumplimiento(
-        Usuario $usuario,
-        array $filtros,
-        bool $paginar
-    ): array {
-        $agencias = $this->agenciasPermitidas($usuario);
-
-        if (
-            $agencias !== null
-            && $filtros['agencia_id'] > 0
-        ) {
-            abort_unless(
-                in_array(
-                    $filtros['agencia_id'],
-                    $agencias,
-                    true
-                ),
-                403,
-                'No tiene acceso a esta agencia.'
-            );
+    /**
+     * Cumplimiento calculado desde asignaciones operativas persistentes.
+     * No depende de jornadas_receptor.
+     * Sin calendario laboral, los días de vigencia se consideran programados.
+     */
+    private function cumplimiento(Usuario $usuario, array $filtros, bool $paginar): array
+    {
+        $permitidas = $this->agenciasPermitidas($usuario);
+        if ($permitidas !== null && $filtros['agencia_id'] > 0) {
+            abort_unless(in_array($filtros['agencia_id'], $permitidas, true), 403);
         }
 
-        /*
-         * Una jornada programada se considera cumplida
-         * cuando tiene un arqueo ordinario certificado
-         * y no anulado.
-         *
-         * Las jornadas futuras no se clasifican como
-         * incumplimientos.
-         */
+        $desde = \Illuminate\Support\Carbon::parse($filtros['desde'] ?? now()->startOfMonth()->toDateString())->startOfDay();
+        $hasta = \Illuminate\Support\Carbon::parse($filtros['hasta'] ?? today()->toDateString())->startOfDay();
+        abort_if($desde->gt($hasta), 422, 'La fecha inicial debe ser anterior a la final.');
+        abort_if($desde->diffInDays($hasta) > 366, 422, 'El reporte de cumplimiento admite un máximo de 367 días por consulta.');
+        $hasta = $hasta->min(today());
 
-        $query = DB::table('jornadas_receptor as j')
-            ->join(
-                'agencias as a',
-                'a.id',
-                '=',
-                'j.agencia_id'
-            )
-            ->leftJoin(
-                'ventanillas_agencia as v',
-                'v.id',
-                '=',
-                'j.ventanilla_id'
-            )
-            ->leftJoin(
-                'usuarios as u',
-                'u.id',
-                '=',
-                'j.receptor_usuario_id'
-            )
-            ->whereDate(
-                'j.fecha_operativa',
-                '<=',
-                now()->toDateString()
-            )
-            ->when(
-                $agencias !== null,
-                fn (Builder $q) => $q->whereIn(
-                    'j.agencia_id',
-                    $agencias
-                )
-            )
-            ->when(
-                $filtros['agencia_id'] > 0,
-                fn (Builder $q) => $q->where(
-                    'j.agencia_id',
-                    $filtros['agencia_id']
-                )
-            )
-            ->when(
-                $filtros['receptor_id'] > 0,
-                fn (Builder $q) => $q->where(
-                    'j.receptor_usuario_id',
-                    $filtros['receptor_id']
-                )
-            )
-            ->when(
-                $filtros['ventanilla_id'] > 0,
-                fn (Builder $q) => $q->where(
-                    'j.ventanilla_id',
-                    $filtros['ventanilla_id']
-                )
-            )
-            ->when(
-                $filtros['desde'],
-                fn (Builder $q) => $q->whereDate(
-                    'j.fecha_operativa',
-                    '>=',
-                    $filtros['desde']
-                )
-            )
-            ->when(
-                $filtros['hasta'],
-                fn (Builder $q) => $q->whereDate(
-                    'j.fecha_operativa',
-                    '<=',
-                    $filtros['hasta']
-                )
-            )
-            ->select([
-                'j.id',
-                'j.fecha_operativa',
-                'j.agencia_id',
-                'j.receptor_usuario_id',
-                'a.nombre as agencia',
-                'v.codigo as ventanilla',
-                'u.usuario as receptor',
-                'j.estado as estado_jornada',
-            ])
-            ->selectRaw(
-                "CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM arqueos_agencia arq
-                    WHERE arq.jornada_id = j.id
-                      AND arq.tipo = 'ORDINARIO'
-                      AND arq.estado <> 'ANULADO'
-                      AND arq.certificado_at IS NOT NULL
-                ) THEN 'CUMPLIDO'
-                ELSE 'SIN_ARQUEO_CERTIFICADO'
-                END as cumplimiento"
-            )
-            ->orderByDesc('j.fecha_operativa')
-            ->orderBy('a.nombre');
+        $asignaciones = DB::table('asignaciones_operativas_receptor as ao')
+            ->join('agencias as a', 'a.id', '=', 'ao.agencia_id')
+            ->join('ventanillas_agencia as v', 'v.id', '=', 'ao.ventanilla_id')
+            ->join('turnos_agencia as t', 't.id', '=', 'ao.turno_id')
+            ->join('usuarios as u', 'u.id', '=', 'ao.receptor_usuario_id')
+            ->when($permitidas !== null, fn (Builder $q) => $q->whereIn('ao.agencia_id', $permitidas))
+            ->when($filtros['agencia_id'] > 0, fn (Builder $q) => $q->where('ao.agencia_id', $filtros['agencia_id']))
+            ->when($filtros['receptor_id'] > 0, fn (Builder $q) => $q->where('ao.receptor_usuario_id', $filtros['receptor_id']))
+            ->when($filtros['ventanilla_id'] > 0, fn (Builder $q) => $q->where('ao.ventanilla_id', $filtros['ventanilla_id']))
+            ->when($filtros['turno'] !== '', fn (Builder $q) => $q->where('t.nombre', $filtros['turno']))
+            ->whereDate('ao.fecha_inicio', '<=', $hasta->toDateString())
+            ->where(fn (Builder $q) => $q->whereNull('ao.fecha_fin')->orWhereDate('ao.fecha_fin', '>=', $desde->toDateString()))
+            ->get(['ao.id', 'ao.agencia_id', 'ao.receptor_usuario_id', 'ao.ventanilla_id',
+                'ao.turno_id', 'ao.fecha_inicio', 'ao.fecha_fin', 'a.nombre as agencia',
+                'v.codigo as ventanilla', 't.nombre as turno', 't.hora_fin',
+                't.cruza_medianoche', 'u.usuario as receptor']);
 
-        $total = (clone $query)->count();
+        $arqueos = DB::table('arqueos_agencia')
+            ->where('tipo', 'ORDINARIO')
+            ->whereBetween('fecha_operativa', [$desde->toDateString(), $hasta->toDateString()])
+            ->when($permitidas !== null, fn (Builder $q) => $q->whereIn('agencia_id', $permitidas))
+            ->when($filtros['agencia_id'] > 0, fn (Builder $q) => $q->where('agencia_id', $filtros['agencia_id']))
+            ->get(['id', 'asignacion_operativa_id', 'agencia_id', 'receptor_usuario_id',
+                'ventanilla_id', 'fecha_operativa', 'estado', 'certificado_at']);
 
-        $cumplidos = DB::table('jornadas_receptor as j')
-            ->whereIn(
-                'j.id',
-                (clone $query)
-                    ->reorder()
-                    ->select('j.id')
-            )
-            ->whereExists(function (Builder $sub) {
-                $sub->selectRaw('1')
-                    ->from('arqueos_agencia as arq')
-                    ->whereColumn(
-                        'arq.jornada_id',
-                        'j.id'
-                    )
-                    ->where('arq.tipo', 'ORDINARIO')
-                    ->where('arq.estado', '!=', 'ANULADO')
-                    ->whereNotNull('arq.certificado_at');
-            })
-            ->count();
+        $porAsignacion = $arqueos->groupBy(fn ($arq) => ($arq->asignacion_operativa_id ?? 0).'|'.$arq->fecha_operativa);
+        $filas = collect();
+        $cumplidos = 0;
+        $pendientes = 0;
+        $noVencidos = 0;
 
+        foreach ($asignaciones as $asignacion) {
+            $inicio = $desde->copy()->max(\Illuminate\Support\Carbon::parse($asignacion->fecha_inicio));
+            $fin = $hasta->copy();
+            if ($asignacion->fecha_fin) {
+                $fin = $fin->min(\Illuminate\Support\Carbon::parse($asignacion->fecha_fin));
+            }
+            for ($dia = $inicio->copy(); $dia->lte($fin); $dia->addDay()) {
+                $fecha = $dia->toDateString();
+                $registros = $porAsignacion->get($asignacion->id.'|'.$fecha, collect());
+                // Compatibilidad con arqueos anteriores que no tenían asignación_operativa_id.
+                if ($registros->isEmpty()) {
+                    $registros = $arqueos->filter(fn ($arq) => !$arq->asignacion_operativa_id
+                        && $arq->fecha_operativa === $fecha
+                        && (int)$arq->agencia_id === (int)$asignacion->agencia_id
+                        && (int)$arq->receptor_usuario_id === (int)$asignacion->receptor_usuario_id
+                        && (int)$arq->ventanilla_id === (int)$asignacion->ventanilla_id);
+                }
+                $certificado = $registros->contains(fn ($arq) => $arq->estado !== 'ANULADO' && $arq->certificado_at !== null);
+                $enProceso = $registros->contains(fn ($arq) => $arq->estado !== 'ANULADO');
+                $horaFin = substr((string)$asignacion->hora_fin, 0, 8);
+                $vencimiento = \Illuminate\Support\Carbon::parse($fecha.' '.$horaFin);
+                if ($asignacion->cruza_medianoche) $vencimiento->addDay();
+                $estado = $certificado ? 'CUMPLIDO' : ($enProceso ? 'PENDIENTE_CERTIFICACION' : ($vencimiento->isFuture() ? 'NO_VENCIDO' : 'SIN_ARQUEO_CERTIFICADO'));
+                if ($estado === 'CUMPLIDO') $cumplidos++;
+                if ($estado === 'PENDIENTE_CERTIFICACION') $pendientes++;
+                if ($estado === 'NO_VENCIDO') $noVencidos++;
+                $filas->push((object)[
+                    'fecha_operativa' => $fecha,
+                    'agencia' => $asignacion->agencia,
+                    'ventanilla' => $asignacion->ventanilla,
+                    'receptor' => $asignacion->receptor,
+                    'turno' => $asignacion->turno,
+                    'cumplimiento' => $estado,
+                ]);
+            }
+        }
+        $filas = $filas->sortByDesc('fecha_operativa')->values();
+        $total = $filas->count();
+        $resultados = $filas;
+        if ($paginar) {
+            $pagina = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+            $resultados = new \Illuminate\Pagination\LengthAwarePaginator(
+                $filas->forPage($pagina, $filtros['por_pagina'])->values(),
+                $total, $filtros['por_pagina'], $pagina,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => request()->query()]
+            );
+        }
+        $vencidos = $total - $noVencidos;
         return [
-            'resultados' => $this->resolver(
-                $query,
-                $paginar,
-                $filtros['por_pagina']
-            ),
+            'resultados' => $resultados,
             'columnas' => [
-                'fecha_operativa' => 'Fecha',
-                'agencia' => 'Agencia',
-                'ventanilla' => 'Ventanilla',
-                'receptor' => 'Usuario Receptor',
-                'estado_jornada' => 'Estado Jornada',
-                'cumplimiento' => 'Cumplimiento',
+                'fecha_operativa' => 'Fecha', 'agencia' => 'Agencia',
+                'ventanilla' => 'Ventanilla', 'receptor' => 'Receptor',
+                'turno' => 'Turno', 'cumplimiento' => 'Cumplimiento',
             ],
             'metricas' => [
-                'Jornadas registradas' => $total,
+                'Turnos evaluados' => $total,
                 'Con arqueo certificado' => $cumplidos,
-                'Sin arqueo certificado' => max(
-                    0,
-                    $total - $cumplidos
-                ),
-                'Porcentaje de cumplimiento' => $total > 0
-                    ? number_format(
-                        ($cumplidos / $total) * 100,
-                        2
-                    ).'%'
-                    : '0.00%',
+                'Pendientes de certificación' => $pendientes,
+                'Sin arqueo certificado' => $vencidos - $cumplidos - $pendientes,
+                'Turnos no vencidos' => $noVencidos,
+                'Porcentaje de cumplimiento' => $vencidos > 0 ? number_format($cumplidos / $vencidos * 100, 2).'%' : '0.00%',
             ],
             'titulo' => self::REPORTES['cumplimiento'],
         ];
