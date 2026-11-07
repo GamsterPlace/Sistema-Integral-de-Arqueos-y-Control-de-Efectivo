@@ -1,487 +1,148 @@
 @extends('layouts.auditoria')
 
-@section('title', 'Dashboard')
-@section('module-title', 'Dashboard')
+@section('title', 'Dashboard de Auditoría')
+@section('module-title', 'Dashboard de Auditoría')
 
 @push('styles')
 <style>
-    .welcome-panel {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 25px;
-        margin-bottom: 24px;
-        padding: 27px 30px;
-        overflow: hidden;
-        border-radius: 20px;
-        background: linear-gradient(135deg, #07345f, #164c96 62%, #128257);
-        color: #fff;
-        box-shadow: 0 17px 36px rgba(10,61,109,.16);
-    }
-    .welcome-panel::before {
-        content:"";
-        position:absolute;
-        width:230px;height:230px;
-        top:-145px;right:-75px;
-        border:43px solid rgba(255,255,255,.055);
-        border-radius:50%;
-    }
-    .welcome-content,.welcome-status{position:relative;z-index:2}
-    .welcome-content span {
-        display:block;margin-bottom:6px;color:rgba(255,255,255,.68);
-        font-size:11px;font-weight:750;letter-spacing:.8px;text-transform:uppercase;
-    }
-    .welcome-content h2{margin:0;font-size:27px;letter-spacing:-.65px}
-    .welcome-content p {
-        max-width:700px;margin:10px 0 0;color:rgba(255,255,255,.75);
-        font-size:13px;line-height:1.6;
-    }
-    .welcome-status {
-        flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:11px 15px;
-        border:1px solid rgba(255,255,255,.15);border-radius:13px;
-        background:rgba(255,255,255,.10);font-size:12px;font-weight:750;
-    }
-    .status-dot {
-        width:9px;height:9px;border-radius:50%;background:#73e1a0;
-        box-shadow:0 0 0 5px rgba(115,225,160,.13);
-    }
+.aud-dashboard{display:grid;gap:20px;color:#19344d}
+.aud-hero{background:linear-gradient(120deg,#07345f,#164c96 65%,#128257);color:#fff;border-radius:19px;padding:25px 28px}
+.aud-hero small{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#c7e5f5;font-weight:800}
+.aud-hero h2{font-size:25px;margin:7px 0 8px}.aud-hero p{font-size:13px;line-height:1.7;color:#d8e9f5;margin:0;max-width:760px}
+.aud-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:24px}
+.aud-tabs button{font:inherit;text-align:left;display:flex;align-items:center;gap:15px;background:white;border:2px solid #dde8f1;border-radius:15px;padding:18px;cursor:pointer;color:#153e64;transition:.15s;box-shadow:0 5px 15px #1439530b}
+.aud-tabs button:hover{border-color:#86acd0}.aud-tabs button[aria-selected="true"]{border-color:#164c96;background:#f0f6fe;box-shadow:0 7px 20px #164c961b}
+.aud-tabs-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:#e8f1fb;color:#164c96}
+.aud-tabs-icon svg{width:23px;height:23px}.aud-tabs strong{display:block;font-size:15px}.aud-tabs small{display:block;font-size:11px;color:#788d9e;margin-top:4px;line-height:1.4}
 
-    .summary-grid {
-        display:grid;
-        grid-template-columns:repeat(4,minmax(0,1fr));
-        gap:18px;margin-bottom:24px;
-    }
-    .summary-card {
-        min-height:142px;padding:19px;border:1px solid #e0e8ee;
-        border-radius:17px;background:#fff;
-        box-shadow:0 8px 24px rgba(20,57,83,.055);
-    }
-    .summary-card.success{border-color:#c5e5d1;background:#f7fcf9}
-    .summary-card.warning{border-color:#efd99f;background:#fffdf6}
-    .summary-card.danger{border-color:#efc5c5;background:#fffafa}
-    .summary-card.info{border-color:#c9dceb;background:#f7fbff}
-    .summary-card-header {
-        display:flex;align-items:center;justify-content:space-between;gap:12px;
-    }
-    .summary-label {
-        color:#71818e;font-size:11px;font-weight:750;letter-spacing:.55px;
-        text-transform:uppercase;
-    }
-    .summary-icon {
-        flex:0 0 auto;width:43px;height:43px;display:grid;place-items:center;
-        border-radius:13px;background:rgba(22,76,150,.09);color:#164c96;
-    }
-    .summary-icon.green{background:rgba(0,166,81,.10);color:#009349}
-    .summary-icon.orange{background:rgba(224,151,14,.11);color:#b47c0e}
-    .summary-icon.red{background:rgba(194,57,52,.10);color:#b83b36}
-    .summary-icon.gray{background:#eef2f5;color:#71808c}
-    .summary-icon svg{width:22px;height:22px}
-    .summary-value {
-        display:block;margin-top:16px;color:#082d55;font-size:23px;
-        font-weight:800;letter-spacing:-.5px;
-    }
-    .summary-description {
-        display:block;margin-top:5px;color:#87949d;font-size:11px;line-height:1.45;
-    }
-
-    .dashboard-grid {
-        display:grid;
-        grid-template-columns:minmax(0,1.6fr) minmax(300px,.65fr);
-        gap:20px;
-    }
-    .panel {
-        overflow:hidden;border:1px solid #e0e8ee;border-radius:18px;
-        background:#fff;box-shadow:0 8px 25px rgba(20,57,83,.05);
-    }
-    .panel-header {
-        display:flex;align-items:center;justify-content:space-between;gap:15px;
-        padding:18px 20px;border-bottom:1px solid #edf1f4;
-    }
-    .panel-title h3{margin:0;color:#0a3158;font-size:16px}
-    .panel-title p{margin:5px 0 0;color:#82909a;font-size:11px}
-    .panel-link{color:#164c96;font-size:11px;font-weight:750;white-space:nowrap}
-    .panel-link:hover{color:#0b315f}
-
-    .table-responsive{overflow-x:auto}
-    .recent-table{width:100%;min-width:920px;border-collapse:collapse}
-    .recent-table th,.recent-table td {
-        padding:13px 14px;border-bottom:1px solid #edf1f4;
-        text-align:left;vertical-align:middle;font-size:11px;
-    }
-    .recent-table th {
-        background:#f8fafb;color:#687b8b;font-size:9px;font-weight:800;
-        letter-spacing:.4px;text-transform:uppercase;
-    }
-    .recent-table tbody tr{transition:background .18s ease}
-    .recent-table tbody tr:hover{background:#fafcfd}
-    .recent-table tbody tr:last-child td{border-bottom:0}
-    .table-primary{color:#19344d;font-weight:800}
-    .table-secondary{color:#7d8c97}
-
-    .badge {
-        display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;
-        font-size:8px;font-weight:800;letter-spacing:.35px;text-transform:uppercase;
-        white-space:nowrap;
-    }
-    .badge.success{background:#eaf8ef;color:#1d7b4e}
-    .badge.warning{background:#fff5d9;color:#8b6500}
-    .badge.danger{background:#fdecec;color:#b13c3c}
-    .badge.neutral{background:#edf2f6;color:#50667a}
-
-    .diff-negative{color:#b33a34;font-weight:800}
-    .diff-positive{color:#16834f;font-weight:800}
-    .diff-zero{color:#607586;font-weight:800}
-
-    .audit-summary{padding:20px}
-    .audit-highlight {
-        padding:18px;border:1px solid #dfe8ef;border-radius:15px;
-        background:#f8fbfd;margin-bottom:15px;
-    }
-    .audit-highlight span {
-        display:block;color:#718392;font-size:9px;font-weight:800;
-        text-transform:uppercase;letter-spacing:.45px;
-    }
-    .audit-highlight strong {
-        display:block;margin-top:8px;color:#0a3158;font-size:30px;
-    }
-    .audit-highlight p {
-        margin:5px 0 0;color:#82909a;font-size:10px;line-height:1.5;
-    }
-    .audit-mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
-    .audit-mini {
-        padding:14px;border:1px solid #e3eaef;border-radius:13px;background:#fbfcfd;
-    }
-    .audit-mini span {
-        display:block;color:#758697;font-size:8px;font-weight:800;
-        text-transform:uppercase;
-    }
-    .audit-mini strong {
-        display:block;margin-top:6px;color:#173b59;font-size:18px;
-    }
-    .audit-note {
-        margin-top:15px;padding:14px;border:1px solid #dfe8ef;border-radius:13px;
-        background:#f8fbfd;color:#647786;font-size:10px;line-height:1.55;
-    }
-    .audit-note strong{color:#173b59}
-
-    .empty-record{padding:32px 20px;text-align:center}
-    .empty-record-icon {
-        width:58px;height:58px;display:grid;place-items:center;margin:0 auto 14px;
-        border-radius:17px;background:#edf3f8;color:#164c96;
-    }
-    .empty-record-icon svg{width:29px;height:29px}
-    .empty-record h4{margin:0;color:#17364f;font-size:14px}
-    .empty-record p {
-        max-width:360px;margin:7px auto 0;color:#83919b;font-size:11px;line-height:1.55;
-    }
-
-    @media(max-width:1200px){
-        .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-        .dashboard-grid{grid-template-columns:1fr}
-    }
-    @media(max-width:700px){
-        .welcome-panel{display:block;padding:23px 20px}
-        .welcome-content h2{font-size:23px}
-        .welcome-status{width:fit-content;margin-top:18px}
-        .summary-grid,.audit-mini-grid{grid-template-columns:1fr}
-    }
+.aud-panel[hidden]{display:none!important}.aud-panel{display:grid;gap:19px}
+.aud-heading{margin:0}.aud-heading h3{font-size:19px;color:#0b315f;margin:0 0 5px}.aud-heading p{font-size:12px;color:#6e8191;margin:0}
+.aud-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.aud-card{background:#fff;border:1px solid #e0e8ee;border-radius:16px;padding:18px;min-height:125px;box-shadow:0 6px 20px rgba(18,49,77,.04)}
+.aud-card span{display:block;color:#71818e;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;line-height:1.5}
+.aud-card strong{display:block;color:#123e6a;font-size:29px;margin-top:12px}.aud-card small{display:block;color:#8395a2;font-size:10px;margin-top:6px}
+.aud-card.warn strong{color:#ae7409}.aud-card.danger strong{color:#b54141}.aud-card.success strong{color:#15814e}
+.aud-box{background:#fff;border:1px solid #e0e8ee;border-radius:17px;overflow:hidden}
+.aud-box-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 20px;border-bottom:1px solid #e9eef2}
+.aud-box-head h4{margin:0;color:#123e6a;font-size:15px}.aud-box-head p{margin:5px 0 0;color:#778b99;font-size:11px}
+.aud-link{font-size:12px;color:#164c96;font-weight:800;text-decoration:none}.aud-link:hover{text-decoration:underline}
+.aud-scroll{overflow-x:auto}.aud-table{width:100%;border-collapse:collapse;min-width:720px}.aud-table th{background:#f6f9fb;color:#62798c;text-transform:uppercase;font-size:10px;text-align:left;letter-spacing:.3px}.aud-table th,.aud-table td{padding:13px 16px;border-bottom:1px solid #edf1f4}.aud-table td{font-size:12px;color:#344c60}.aud-table tbody tr:last-child td{border-bottom:0}.aud-table strong{color:#133e68}
+.aud-pill{display:inline-block;padding:5px 9px;border-radius:50px;background:#edf3f9;color:#2b5b88;font-size:10px;font-weight:800}.aud-pill.good{background:#e8f7ee;color:#197847}.aud-pill.bad{background:#fcecec;color:#a93d3d}
+.aud-empty{padding:35px;text-align:center;color:#788b9a;font-size:13px}.aud-note{font-size:11px;line-height:1.65;color:#687d8e;margin:0;padding:14px 18px;background:#f7fafc;border-top:1px solid #edf1f4}
+@media(max-width:1100px){.aud-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.aud-cards{grid-template-columns:1fr}.aud-hero{padding:22px}.aud-tabs{grid-template-columns:1fr}.aud-tabs button{padding:15px}.aud-box-head{align-items:flex-start;flex-direction:column}}
 </style>
 @endpush
 
 @section('content')
-@php
-    $authUser = auth()->user();
-    $nombreAuditor = $authUser?->nombre_completo ?? $authUser?->usuario ?? 'Auditoría';
-@endphp
-
-<div class="page-header">
-    <div class="page-title">
+<div class="aud-dashboard" id="audDashboard">
+    <div class="aud-hero">
+        <small>Supervisión y control institucional</small>
         <h2>Panel de Auditoría</h2>
-        <p>
-            Consulte sus arqueos de auditoría, resultados encontrados
-            y actividad reciente dentro del sistema.
-        </p>
+        <p>Consulte su actividad de auditoría y supervise los arqueos de agentes MICOOPE y agencias ECOSABA desde un mismo lugar.</p>
     </div>
 
-    <div class="page-badge">
-        <span class="page-badge-dot"></span>
-        Auditoría activa
+    <div class="aud-tabs" role="tablist" aria-label="Seleccionar área del dashboard">
+        <button type="button" id="aud-tab-general" role="tab" aria-controls="aud-general" aria-selected="true" data-target="general">
+            <span class="aud-tabs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span><strong>General</strong><small>Panorama institucional</small></span>
+        </button>
+        <button type="button" id="aud-tab-agentes" role="tab" aria-controls="aud-agentes" aria-selected="false" data-target="agentes" tabindex="-1">
+            <span class="aud-tabs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M18 8h5M20.5 5.5v5"/></svg></span><span><strong>Agentes</strong><small>Operación MICOOPE</small></span>
+        </button>
+        <button type="button" id="aud-tab-agencias" role="tab" aria-controls="aud-agencias" aria-selected="false" data-target="agencias" tabindex="-1">
+            <span class="aud-tabs-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 21v-8h8v8M7 8h2m6 0h2"/></svg></span><span><strong>Agencias</strong><small>Operación ECOSABA</small></span>
+        </button>
     </div>
+
+    <section class="aud-panel" id="aud-general" role="tabpanel" aria-labelledby="aud-tab-general">
+        <div class="aud-heading"><h3>Resumen general de Auditoría</h3><p>Actividad del auditor autenticado y cobertura institucional a la fecha.</p></div>
+        <div class="aud-cards">
+            <div class="aud-card"><span>Auditorías propias de agentes</span><strong>{{ number_format($resumen->total) }}</strong><small>Histórico del auditor autenticado</small></div>
+            <div class="aud-card success"><span>Agentes auditados</span><strong>{{ number_format($agentesAuditados) }}</strong><small>Agentes distintos con auditoría válida</small></div>
+            <div class="aud-card"><span>Agentes activos</span><strong>{{ number_format($indicadoresAgentes['activos']) }}</strong><small>Cobertura institucional</small></div>
+            <div class="aud-card"><span>Agencias activas</span><strong>{{ number_format($indicadoresAgencias['agencias']) }}</strong><small>Red institucional</small></div>
+            <div class="aud-card"><span>Arqueos diarios de agentes hoy</span><strong>{{ number_format($indicadoresAgentes['arqueos_hoy']) }}</strong><small>Registros no anulados</small></div>
+            <div class="aud-card"><span>Arqueos de agencias hoy</span><strong>{{ number_format($indicadoresAgencias['arqueos_hoy']) }}</strong><small>Todos los tipos no anulados</small></div>
+            <div class="aud-card danger"><span>Faltantes en auditorías propias</span><strong>{{ number_format($resumen->faltantes) }}</strong><small>Histórico del auditor autenticado</small></div>
+            <div class="aud-card warn"><span>Auditorías propias pendientes</span><strong>{{ number_format($resumen->pendientes) }}</strong><small>Pendientes de certificación</small></div>
+        </div>
+        <div class="aud-box"><div class="aud-box-head"><div><h4>Alcance de la información</h4><p>Indicadores claramente separados por origen.</p></div></div>
+            <p class="aud-note">Las auditorías propias corresponden exclusivamente a arqueos de tipo VISITA_AUDITORIA creados por su usuario. Los indicadores de agentes y agencias muestran información institucional y no se limitan a sus auditorías personales.</p>
+        </div>
+    </section>
+
+    <section class="aud-panel" id="aud-agentes" role="tabpanel" aria-labelledby="aud-tab-agentes" hidden>
+        <div class="aud-heading"><h3>Supervisión de Agentes MICOOPE</h3><p>Actividad institucional de arqueos diarios y resultados de sus auditorías.</p></div>
+        <div class="aud-cards">
+            <div class="aud-card"><span>Agentes activos</span><strong>{{ number_format($indicadoresAgentes['activos']) }}</strong></div>
+            <div class="aud-card success"><span>Agentes con arqueo hoy</span><strong>{{ number_format($indicadoresAgentes['con_arqueo_hoy']) }}</strong></div>
+            <div class="aud-card warn"><span>Sin registro diario hoy</span><strong>{{ number_format($indicadoresAgentes['sin_registro_hoy']) }}</strong><small>No implica incumplimiento antes del cierre</small></div>
+            <div class="aud-card"><span>Arqueos diarios hoy</span><strong>{{ number_format($indicadoresAgentes['arqueos_hoy']) }}</strong></div>
+            <div class="aud-card danger"><span>Faltantes diarios hoy</span><strong>{{ number_format($indicadoresAgentes['faltantes_hoy']) }}</strong></div>
+            <div class="aud-card success"><span>Sobrantes diarios hoy</span><strong>{{ number_format($indicadoresAgentes['sobrantes_hoy']) }}</strong></div>
+            <div class="aud-card"><span>Auditorías propias certificadas</span><strong>{{ number_format($resumen->certificados) }}</strong></div>
+            <div class="aud-card warn"><span>Auditorías propias anuladas</span><strong>{{ number_format($resumen->anulados) }}</strong></div>
+        </div>
+        <div class="aud-box"><div class="aud-box-head"><div><h4>Mis auditorías recientes de agentes</h4><p>Últimas ocho verificaciones realizadas por su usuario.</p></div>
+            @if(\Illuminate\Support\Facades\Route::has('auditoria.arqueos.index'))<a class="aud-link" href="{{ route('auditoria.arqueos.index') }}">Ver historial</a>@endif</div>
+            @if($arqueosRecientes->isEmpty())<div class="aud-empty">Todavía no existen auditorías de agentes registradas por su usuario.</div>
+            @else<div class="aud-scroll"><table class="aud-table"><thead><tr><th>Número</th><th>Fecha</th><th>Agente</th><th>Región</th><th>Ruta</th><th>Estado</th><th>Diferencia</th></tr></thead><tbody>
+            @foreach($arqueosRecientes as $arqueo)<tr><td><strong>{{ $arqueo->numero_arqueo }}</strong></td><td>{{ \Carbon\Carbon::parse($arqueo->fecha_arqueo)->format('d/m/Y') }}</td><td>{{ $arqueo->codigo_agente_historico }} — {{ $arqueo->nombre_negocio_historico }}</td><td>{{ $arqueo->region_historica ?? '—' }}</td><td>{{ $arqueo->ruta_historica ?? '—' }}</td><td><span class="aud-pill {{ $arqueo->estado === 'CERTIFICADO' ? 'good' : ($arqueo->estado === 'ANULADO' ? 'bad' : '') }}">{{ str_replace('_', ' ', $arqueo->estado) }}</span></td><td>Q {{ number_format((float)$arqueo->diferencia, 2) }}</td></tr>@endforeach
+            </tbody></table></div>@endif
+        </div>
+        <p class="aud-note">La cantidad de agentes sin registro hoy es informativa; para determinar incumplimiento se debe aplicar el calendario y las reglas operativas correspondientes.</p>
+    </section>
+
+    <section class="aud-panel" id="aud-agencias" role="tabpanel" aria-labelledby="aud-tab-agencias" hidden>
+        <div class="aud-heading"><h3>Supervisión de Agencias ECOSABA</h3><p>Arqueos por agencia, certificaciones y diferencias registradas hoy.</p></div>
+        <div class="aud-cards">
+            <div class="aud-card"><span>Agencias activas</span><strong>{{ number_format($indicadoresAgencias['agencias']) }}</strong></div>
+            <div class="aud-card"><span>Ventanillas activas</span><strong>{{ number_format($indicadoresAgencias['ventanillas']) }}</strong></div>
+            <div class="aud-card"><span>Arqueos hoy</span><strong>{{ number_format($indicadoresAgencias['arqueos_hoy']) }}</strong></div>
+            <div class="aud-card success"><span>Certificados hoy</span><strong>{{ number_format($indicadoresAgencias['certificados_hoy']) }}</strong></div>
+            <div class="aud-card warn"><span>Pendientes de certificación</span><strong>{{ number_format($indicadoresAgencias['pendientes_hoy']) }}</strong></div>
+            <div class="aud-card danger"><span>Faltantes certificados</span><strong>{{ number_format($indicadoresAgencias['faltantes_hoy']) }}</strong></div>
+            <div class="aud-card success"><span>Sobrantes certificados</span><strong>{{ number_format($indicadoresAgencias['sobrantes_hoy']) }}</strong></div>
+            <div class="aud-card danger"><span>Anulados hoy</span><strong>{{ number_format($indicadoresAgencias['anulados_hoy']) }}</strong></div>
+        </div>
+        <div class="aud-box"><div class="aud-box-head"><div><h4>Estado de las agencias hoy</h4><p>El cumplimiento se evalúa únicamente para turnos finalizados que no cruzan medianoche.</p></div></div>
+            @if($resumenAgencias->isEmpty())<div class="aud-empty">No hay agencias registradas.</div>
+            @else<div class="aud-scroll"><table class="aud-table"><thead><tr><th>Agencia</th><th>Arqueos</th><th>Certificados</th><th>Pendientes</th><th>Faltantes</th><th>Sobrantes</th><th>Turnos exigibles</th><th>Cumplidos</th></tr></thead><tbody>
+            @foreach($resumenAgencias as $agencia)<tr><td><strong>{{ $agencia->codigo }} — {{ $agencia->nombre }}</strong></td><td>{{ $agencia->total_hoy }}</td><td>{{ $agencia->certificados_hoy }}</td><td>{{ $agencia->pendientes_hoy }}</td><td>{{ $agencia->faltantes_hoy }}</td><td>{{ $agencia->sobrantes_hoy }}</td><td>{{ $agencia->turnos_exigibles }}</td><td><span class="aud-pill {{ $agencia->turnos_cumplidos >= $agencia->turnos_exigibles && $agencia->turnos_exigibles > 0 ? 'good' : '' }}">{{ $agencia->turnos_cumplidos }}</span></td></tr>@endforeach
+            </tbody></table></div>@endif
+            <p class="aud-note">Los turnos aún no finalizados no se consideran incumplidos. Los turnos que cruzan medianoche requieren evaluación en el módulo específico de cumplimiento. Las cifras de arqueos pueden incluir tipos distintos al ordinario.</p>
+        </div>
+        <div class="aud-box"><div class="aud-box-head"><div><h4>Arqueos recientes de agencias</h4><p>Últimos registros institucionales.</p></div></div>
+            @if($ultimosArqueosAgencias->isEmpty())<div class="aud-empty">No existen arqueos de agencias registrados.</div>
+            @else<div class="aud-scroll"><table class="aud-table"><thead><tr><th>Número</th><th>Fecha</th><th>Agencia</th><th>Receptor</th><th>Tipo</th><th>Estado</th><th>Diferencia</th></tr></thead><tbody>
+            @foreach($ultimosArqueosAgencias as $arqueo)<tr><td><strong>{{ $arqueo->numero_arqueo }}</strong></td><td>{{ \Carbon\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y') }}</td><td>{{ $arqueo->agencia_nombre_historico ?? '—' }}</td><td>{{ $arqueo->receptor_nombre_historico ?? '—' }}</td><td>{{ str_replace('_', ' ', $arqueo->tipo) }}</td><td><span class="aud-pill {{ $arqueo->estado === 'ANULADO' ? 'bad' : ($arqueo->certificado_at ? 'good' : '') }}">{{ str_replace('_', ' ', $arqueo->estado) }}</span></td><td>Q {{ number_format((float)$arqueo->diferencia, 2) }}</td></tr>@endforeach
+            </tbody></table></div>@endif
+        </div>
+    </section>
 </div>
-
-<section class="welcome-panel">
-    <div class="welcome-content">
-        <span>Control y verificación</span>
-        <h2>{{ $nombreAuditor }}</h2>
-        <p>
-            Desde este panel puede supervisar los arqueos realizados por Auditoría,
-            identificar faltantes, sobrantes y resultados exactos, y dar seguimiento
-            al historial de sus verificaciones.
-        </p>
-    </div>
-
-    <div class="welcome-status">
-        <span class="status-dot"></span>
-        Sesión institucional segura
-    </div>
-</section>
-
-<section class="summary-grid">
-    <article class="summary-card info">
-        <div class="summary-card-header">
-            <span class="summary-label">Total Auditorías</span>
-            <span class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 11l3 3L22 4"/>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->total }}</strong>
-        <span class="summary-description">Arqueos realizados por su usuario.</span>
-    </article>
-
-    <article class="summary-card success">
-        <div class="summary-card-header">
-            <span class="summary-label">Realizados Hoy</span>
-            <span class="summary-icon green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <rect x="3" y="5" width="18" height="16" rx="2"/>
-                    <path d="M8 3v4M16 3v4M3 10h18"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->hoy }}</strong>
-        <span class="summary-description">Auditorías válidas registradas hoy.</span>
-    </article>
-
-    <article class="summary-card success">
-        <div class="summary-card-header">
-            <span class="summary-label">Certificados</span>
-            <span class="summary-icon green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="m8 12 3 3 5-6"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->certificados }}</strong>
-        <span class="summary-description">Arqueos de auditoría certificados.</span>
-    </article>
-
-    <article class="summary-card warning">
-        <div class="summary-card-header">
-            <span class="summary-label">Pendientes</span>
-            <span class="summary-icon orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3 2"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->pendientes }}</strong>
-        <span class="summary-description">Pendientes de certificación.</span>
-    </article>
-
-    <article class="summary-card danger">
-        <div class="summary-card-header">
-            <span class="summary-label">Faltantes</span>
-            <span class="summary-icon red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <path d="M12 3v18"/>
-                    <path d="m7 16 5 5 5-5"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->faltantes }}</strong>
-        <span class="summary-description">Auditorías con diferencia negativa.</span>
-    </article>
-
-    <article class="summary-card success">
-        <div class="summary-card-header">
-            <span class="summary-label">Sobrantes</span>
-            <span class="summary-icon green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <path d="M12 21V3"/>
-                    <path d="m7 8 5-5 5 5"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->sobrantes }}</strong>
-        <span class="summary-description">Auditorías con diferencia positiva.</span>
-    </article>
-
-    <article class="summary-card">
-        <div class="summary-card-header">
-            <span class="summary-label">Exactos</span>
-            <span class="summary-icon gray">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M8 12h8"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->exactos }}</strong>
-        <span class="summary-description">Auditorías sin diferencia.</span>
-    </article>
-
-    <article class="summary-card danger">
-        <div class="summary-card-header">
-            <span class="summary-label">Anulados</span>
-            <span class="summary-icon red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="m9 9 6 6M15 9l-6 6"/>
-                </svg>
-            </span>
-        </div>
-        <strong class="summary-value">{{ $resumen->anulados }}</strong>
-        <span class="summary-description">Auditorías anuladas registradas.</span>
-    </article>
-</section>
-
-<section class="dashboard-grid">
-    <article class="panel">
-        <header class="panel-header">
-            <div class="panel-title">
-                <h3>Auditorías Recientes</h3>
-                <p>Últimos arqueos realizados por su usuario de Auditoría.</p>
-            </div>
-
-            @if(\Illuminate\Support\Facades\Route::has('auditoria.arqueos.index'))
-                <a href="{{ route('auditoria.arqueos.index') }}" class="panel-link">
-                    Ver historial
-                </a>
-            @endif
-        </header>
-
-        @if($arqueosRecientes->isEmpty())
-            <div class="empty-record">
-                <div class="empty-record-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                        <path d="M9 11l3 3L22 4"/>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                    </svg>
-                </div>
-                <h4>No existen auditorías registradas</h4>
-                <p>Sus arqueos de auditoría aparecerán aquí cuando existan registros.</p>
-            </div>
-        @else
-            <div class="table-responsive">
-                <table class="recent-table">
-                    <thead>
-                        <tr>
-                            <th>Número</th>
-                            <th>Fecha</th>
-                            <th>Agente</th>
-                            <th>Región</th>
-                            <th>Ruta</th>
-                            <th>Estado</th>
-                            <th>Diferencia</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($arqueosRecientes as $arqueo)
-                            @php
-                                $diferencia = (float) $arqueo->diferencia;
-
-                                $badgeEstado =
-                                    $arqueo->estado === 'CERTIFICADO'
-                                        ? 'success'
-                                        : ($arqueo->estado === 'ANULADO' ? 'danger' : 'warning');
-
-                                $claseDiferencia =
-                                    $diferencia < 0
-                                        ? 'diff-negative'
-                                        : ($diferencia > 0 ? 'diff-positive' : 'diff-zero');
-                            @endphp
-
-                            <tr>
-                                <td><span class="table-primary">{{ $arqueo->numero_arqueo }}</span></td>
-                                <td class="table-secondary">
-                                    {{ \Carbon\Carbon::parse($arqueo->fecha_arqueo)->format('d/m/Y') }}
-                                </td>
-                                <td>
-                                    <span class="table-primary">{{ $arqueo->codigo_agente_historico ?? '—' }}</span>
-                                    <span class="table-secondary">
-                                        — {{ $arqueo->nombre_negocio_historico ?? 'Sin nombre' }}
-                                    </span>
-                                </td>
-                                <td class="table-secondary">{{ $arqueo->region_historica ?? '—' }}</td>
-                                <td class="table-secondary">{{ $arqueo->ruta_historica ?? '—' }}</td>
-                                <td>
-                                    <span class="badge {{ $badgeEstado }}">
-                                        {{ str_replace('_', ' ', $arqueo->estado) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="{{ $claseDiferencia }}">
-                                        Q {{ number_format(abs($diferencia), 2) }}
-                                        @if($diferencia < 0)
-                                            Faltante
-                                        @elseif($diferencia > 0)
-                                            Sobrante
-                                        @else
-                                            Exacto
-                                        @endif
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </article>
-
-    <aside class="panel">
-        <header class="panel-header">
-            <div class="panel-title">
-                <h3>Resumen de Cobertura</h3>
-                <p>Alcance acumulado de sus verificaciones.</p>
-            </div>
-        </header>
-
-        <div class="audit-summary">
-            <div class="audit-highlight">
-                <span>Agentes auditados</span>
-                <strong>{{ $agentesAuditados }}</strong>
-                <p>
-                    Cantidad de agentes distintos que cuentan con al menos
-                    un arqueo válido realizado por su usuario.
-                </p>
-            </div>
-
-            <div class="audit-mini-grid">
-                <div class="audit-mini">
-                    <span>Total arqueos</span>
-                    <strong>{{ $resumen->total }}</strong>
-                </div>
-
-                <div class="audit-mini">
-                    <span>Hoy</span>
-                    <strong>{{ $resumen->hoy }}</strong>
-                </div>
-
-                <div class="audit-mini">
-                    <span>Con diferencia</span>
-                    <strong>{{ $resumen->faltantes + $resumen->sobrantes }}</strong>
-                </div>
-
-                <div class="audit-mini">
-                    <span>Exactos</span>
-                    <strong>{{ $resumen->exactos }}</strong>
-                </div>
-            </div>
-
-            <div class="audit-note">
-                <strong>Control de Auditoría:</strong>
-                este panel muestra exclusivamente los arqueos
-                <strong>VISITA_AUDITORIA</strong> realizados por el usuario
-                de Auditoría autenticado.
-            </div>
-        </div>
-    </aside>
-</section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const root = document.getElementById('audDashboard');
+    if (!root) return;
+    const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(root.querySelectorAll('[role="tabpanel"]'));
+    function activate(name) {
+        tabs.forEach(tab => { const active = tab.dataset.target === name; tab.setAttribute('aria-selected', active ? 'true' : 'false'); tab.tabIndex = active ? 0 : -1; });
+        panels.forEach(panel => { panel.hidden = panel.id !== 'aud-' + name; });
+    }
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => activate(tab.dataset.target));
+        tab.addEventListener('keydown', event => {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+            event.preventDefault();
+            const offset = event.key === 'ArrowRight' ? 1 : -1;
+            const next = tabs[(index + offset + tabs.length) % tabs.length];
+            activate(next.dataset.target); next.focus();
+        });
+    });
+    activate('general');
+});
+</script>
+@endpush

@@ -589,7 +589,18 @@
                         </svg>
                     </span>
 
-                    Cumplimiento de Arqueos
+                    Cumplimiento de Agentes
+                </a>
+                <a href="{{ route('gerencia.cumplimiento-agencias.index') }}"
+                   class="navigation-link {{ request()->routeIs('gerencia.cumplimiento-agencias.*') ? 'active' : '' }}">
+                    <span class="navigation-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="17" rx="2"/>
+                            <path d="M8 21V9h8v12M7 7h.01M17 7h.01"/>
+                            <path d="m9 15 2 2 4-4"/>
+                        </svg>
+                    </span>
+                    Cumplimiento de Agencias
                 </a>
             </div>
 
@@ -843,7 +854,7 @@
                 </a>
             </div>
 
-            <p class="navigation-label">Análisis</p>
+            <p class="navigation-label">Reportes</p>
 
             <div class="navigation-list">
                 <a
@@ -866,7 +877,17 @@
                         </svg>
                     </span>
 
-                    Reportes
+                    Reportes de Agentes
+                </a>
+                <a href="{{ route('agencias.reportes.index') }}"
+                   class="navigation-link {{ request()->routeIs('agencias.reportes.*') ? 'active' : '' }}">
+                    <span class="navigation-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19h16M6 16V11M12 16V5M18 16V8"/>
+                            <rect x="3" y="2" width="18" height="19" rx="2"/>
+                        </svg>
+                    </span>
+                    Reportes de Agencias
                 </a>
             </div>
 
@@ -880,9 +901,6 @@
                 class="navigation-link {{ request()->routeIs('gerencia.agencias.receptores.*') ? 'active' : '' }}">
                     <span class="navigation-icon">♙</span>
                     Historial por receptor
-                </a>
-                <a href="{{ route('agencias.reportes.index') }}" class="navigation-link {{ request()->routeIs('agencias.reportes.*') ? 'active' : '' }}">
-                    <span class="navigation-icon">▤</span> Reportes de Agencias
                 </a>
             </div>
 

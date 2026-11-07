@@ -1,1150 +1,157 @@
 @extends('layouts.gerencia')
 
-@section('title', 'Dashboard')
+@section('title', 'Dashboard de Gerencia')
 @section('module-title', 'Dashboard')
 
 @push('styles')
 <style>
-    .welcome-panel {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 25px;
-        margin-bottom: 24px;
-        padding: 27px 30px;
-        overflow: hidden;
-        border-radius: 20px;
-        background:
-            linear-gradient(
-                135deg,
-                #07345f,
-                #164c96 62%,
-                #128257
-            );
-        color: #ffffff;
-        box-shadow:
-            0 17px 36px rgba(10, 61, 109, .16);
-    }
-
-    .welcome-panel::before {
-        content: "";
-        position: absolute;
-        width: 230px;
-        height: 230px;
-        top: -145px;
-        right: -75px;
-        border: 43px solid rgba(255, 255, 255, .055);
-        border-radius: 50%;
-    }
-
-    .welcome-content,
-    .welcome-status {
-        position: relative;
-        z-index: 2;
-    }
-
-    .welcome-content span {
-        display: block;
-        margin-bottom: 6px;
-        color: rgba(255, 255, 255, .68);
-        font-size: 11px;
-        font-weight: 750;
-        letter-spacing: .8px;
-        text-transform: uppercase;
-    }
-
-    .welcome-content h2 {
-        margin: 0;
-        font-size: 27px;
-        letter-spacing: -.65px;
-    }
-
-    .welcome-content p {
-        max-width: 690px;
-        margin: 10px 0 0;
-        color: rgba(255, 255, 255, .75);
-        font-size: 13px;
-        line-height: 1.6;
-    }
-
-    .welcome-status {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 11px 15px;
-        border: 1px solid rgba(255, 255, 255, .15);
-        border-radius: 13px;
-        background: rgba(255, 255, 255, .10);
-        font-size: 12px;
-        font-weight: 750;
-    }
-
-    .status-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #73e1a0;
-        box-shadow:
-            0 0 0 5px rgba(115, 225, 160, .13);
-    }
-
-    .summary-grid {
-        display: grid;
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-        gap: 18px;
-        margin-bottom: 24px;
-    }
-
-    .summary-card {
-        position: relative;
-        min-height: 142px;
-        padding: 19px;
-        border: 1px solid #e0e8ee;
-        border-radius: 17px;
-        background: #ffffff;
-        box-shadow:
-            0 8px 24px rgba(20, 57, 83, .055);
-    }
-
-    .summary-card.success {
-        border-color: #c5e5d1;
-        background: #f7fcf9;
-    }
-
-    .summary-card.warning {
-        border-color: #efd99f;
-        background: #fffdf6;
-    }
-
-    .summary-card.danger {
-        border-color: #efc5c5;
-        background: #fffafa;
-    }
-
-    .summary-card.info {
-        border-color: #c9dceb;
-        background: #f7fbff;
-    }
-
-    .summary-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-
-    .summary-label {
-        color: #71818e;
-        font-size: 11px;
-        font-weight: 750;
-        letter-spacing: .55px;
-        text-transform: uppercase;
-    }
-
-    .summary-icon {
-        flex: 0 0 auto;
-        width: 43px;
-        height: 43px;
-        display: grid;
-        place-items: center;
-        border-radius: 13px;
-        background: rgba(22, 76, 150, .09);
-        color: #164c96;
-    }
-
-    .summary-icon.green {
-        background: rgba(0, 166, 81, .10);
-        color: #009349;
-    }
-
-    .summary-icon.orange {
-        background: rgba(224, 151, 14, .11);
-        color: #b47c0e;
-    }
-
-    .summary-icon.red {
-        background: rgba(194, 57, 52, .10);
-        color: #b83b36;
-    }
-
-    .summary-icon.gray {
-        background: #eef2f5;
-        color: #71808c;
-    }
-
-    .summary-icon svg {
-        width: 22px;
-        height: 22px;
-    }
-
-    .summary-value {
-        display: block;
-        margin-top: 16px;
-        color: #082d55;
-        font-size: 23px;
-        font-weight: 800;
-        letter-spacing: -.5px;
-    }
-
-    .summary-description {
-        display: block;
-        margin-top: 5px;
-        color: #87949d;
-        font-size: 11px;
-        line-height: 1.45;
-    }
-
-    .content-grid {
-        display: grid;
-        grid-template-columns:
-            minmax(330px, .78fr)
-            minmax(0, 1.72fr);
-        gap: 20px;
-    }
-
-    .panel {
-        overflow: hidden;
-        border: 1px solid #e0e8ee;
-        border-radius: 18px;
-        background: #ffffff;
-        box-shadow:
-            0 8px 25px rgba(20, 57, 83, .05);
-    }
-
-    .panel-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 18px 20px;
-        border-bottom: 1px solid #edf1f4;
-    }
-
-    .panel-title h3 {
-        margin: 0;
-        color: #0a3158;
-        font-size: 16px;
-    }
-
-    .panel-title p {
-        margin: 5px 0 0;
-        color: #82909a;
-        font-size: 11px;
-    }
-
-    .panel-link {
-        color: #164c96;
-        font-size: 11px;
-        font-weight: 750;
-        white-space: nowrap;
-    }
-
-    .panel-link:hover {
-        color: #0b315f;
-    }
-
-    .panel-body {
-        padding: 20px;
-    }
-
-    .compliance-card {
-        padding: 2px 0 4px;
-    }
-
-    .progress-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-        color: #52697b;
-        font-size: 11px;
-        font-weight: 800;
-    }
-
-    .progress-title strong {
-        color: #0a3158;
-        font-size: 18px;
-    }
-
-    .progress-bar {
-        height: 14px;
-        overflow: hidden;
-        border-radius: 999px;
-        background: #edf1f4;
-        box-shadow:
-            inset 0 1px 2px rgba(26, 54, 76, .05);
-    }
-
-    .progress-value {
-        height: 100%;
-        border-radius: inherit;
-        background:
-            linear-gradient(
-                90deg,
-                #164c96,
-                #1c64b5,
-                #00a651
-            );
-    }
-
-    .compliance-description {
-        margin-top: 10px;
-        color: #83919b;
-        font-size: 11px;
-        line-height: 1.55;
-    }
-
-    .compliance-info {
-        display: grid;
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        margin-top: 18px;
-    }
-
-    .mini-stat {
-        padding: 14px;
-        border: 1px solid #e3eaef;
-        border-radius: 13px;
-        background: #fbfcfd;
-    }
-
-    .mini-stat span {
-        display: block;
-        color: #758697;
-        font-size: 8px;
-        font-weight: 800;
-        letter-spacing: .4px;
-        text-transform: uppercase;
-    }
-
-    .mini-stat strong {
-        display: block;
-        margin-top: 6px;
-        color: #173b59;
-        font-size: 18px;
-    }
-
-    .executive-note {
-        margin-top: 16px;
-        padding: 14px;
-        border: 1px solid #dfe8ef;
-        border-radius: 13px;
-        background: #f8fbfd;
-        color: #647786;
-        font-size: 10px;
-        line-height: 1.55;
-    }
-
-    .executive-note strong {
-        color: #173b59;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .recent-table {
-        width: 100%;
-        min-width: 930px;
-        border-collapse: collapse;
-    }
-
-    .recent-table th,
-    .recent-table td {
-        padding: 13px 14px;
-        border-bottom: 1px solid #edf1f4;
-        text-align: left;
-        vertical-align: middle;
-        font-size: 11px;
-    }
-
-    .recent-table th {
-        background: #f8fafb;
-        color: #687b8b;
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: .4px;
-        text-transform: uppercase;
-    }
-
-    .recent-table tbody tr {
-        transition: background .18s ease;
-    }
-
-    .recent-table tbody tr:hover {
-        background: #fafcfd;
-    }
-
-    .recent-table tbody tr:last-child td {
-        border-bottom: 0;
-    }
-
-    .table-primary {
-        color: #19344d;
-        font-weight: 800;
-    }
-
-    .table-secondary {
-        color: #7d8c97;
-    }
-
-    .type-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 7px 10px;
-        border-radius: 999px;
-        background: #edf2f6;
-        color: #50667a;
-        font-size: 8px;
-        font-weight: 800;
-        letter-spacing: .35px;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .type-badge.agent {
-        background: #eaf2fb;
-        color: #195b9b;
-    }
-
-    .type-badge.promoter {
-        background: #eaf8ef;
-        color: #1d7b4e;
-    }
-
-    .type-badge.audit {
-        background: #f1ecfb;
-        color: #7052a8;
-    }
-
-    .diff-negative {
-        color: #b33a34;
-        font-weight: 800;
-    }
-
-    .diff-positive {
-        color: #16834f;
-        font-weight: 800;
-    }
-
-    .diff-zero {
-        color: #607586;
-        font-weight: 800;
-    }
-
-    .empty-record {
-        padding: 32px 20px;
-        text-align: center;
-    }
-
-    .empty-record-icon {
-        width: 58px;
-        height: 58px;
-        display: grid;
-        place-items: center;
-        margin: 0 auto 14px;
-        border-radius: 17px;
-        background: #edf3f8;
-        color: #164c96;
-    }
-
-    .empty-record-icon svg {
-        width: 29px;
-        height: 29px;
-    }
-
-    .empty-record h4 {
-        margin: 0;
-        color: #17364f;
-        font-size: 14px;
-    }
-
-    .empty-record p {
-        max-width: 360px;
-        margin: 7px auto 0;
-        color: #83919b;
-        font-size: 11px;
-        line-height: 1.55;
-    }
-
-    @media (max-width: 1250px) {
-        .summary-grid {
-            grid-template-columns:
-                repeat(2, minmax(0, 1fr));
-        }
-
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 700px) {
-        .welcome-panel {
-            display: block;
-            padding: 23px 20px;
-        }
-
-        .welcome-content h2 {
-            font-size: 23px;
-        }
-
-        .welcome-status {
-            width: fit-content;
-            margin-top: 18px;
-        }
-
-        .summary-grid,
-        .compliance-info {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-<style>
-
-    /* Agencias: mismo lenguaje visual de los paneles ejecutivos MICOOPE */
-    .agency-panels .panel{overflow:hidden;border:1px solid #dfe7ee;border-radius:18px;box-shadow:0 9px 26px rgba(20,57,83,.055);background:#fff}
-    .agency-panels .panel-header{padding:20px 23px;background:linear-gradient(100deg,#f8fbff,#fff);border-bottom:1px solid #e7edf3}
-    .agency-panels .panel-title h3{font-size:17px;font-weight:800;color:#092f59}
-    .agency-panels .panel-title p{font-size:12px;color:#718496}
-    .agency-panels .recent-table th{padding:15px 17px;background:#f1f6fa;color:#506a82;letter-spacing:.65px}
-    .agency-panels .recent-table td{padding:17px;line-height:1.55}
-    .agency-panels .recent-table tbody tr:nth-child(even){background:#fbfdff}
-    .agency-panels .recent-table tbody tr:hover{background:#f2f8ff}
-    .agency-panels .table-primary{color:#0a3158;font-weight:800}
-    .agency-panels .table-secondary{color:#728598}
-    .agency-compliance{min-width:165px;display:flex;align-items:center;gap:11px}
-    .agency-compliance-track{height:9px;flex:1;min-width:70px;border-radius:30px;background:#e6edf3;overflow:hidden}
-    .agency-compliance-fill{height:100%;border-radius:30px;background:linear-gradient(90deg,#1681c4,#00a651)}
-    .agency-compliance-fill.low{background:linear-gradient(90deg,#e6a431,#efbd57)}
-    .agency-compliance-fill.none{background:#dce5ec}
-    .agency-compliance strong{font-size:12px;color:#0a3158;white-space:nowrap}
-    .agency-compliance-detail{display:block;margin-top:5px;font-size:10px;color:#778a9a}
-    .agency-compliance-note{margin:0;padding:12px 22px 17px;font-size:11px;line-height:1.6;color:#748699;border-top:1px solid #edf1f4}
-    .agency-section-marker{display:inline-flex;align-items:center;gap:9px;margin-bottom:8px;color:#1760a4;font-size:11px;font-weight:800;letter-spacing:.7px;text-transform:uppercase}
-    .agency-section-marker:before{content:'';width:8px;height:8px;background:#00a651;border-radius:50%}
-    .agency-table .type-badge{white-space:nowrap}
-    @media(max-width:800px){.agency-panels .panel-header{padding:16px}.agency-panels .recent-table td{padding:13px}}
-
-    .agency-heading {display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:32px 0 20px}
-    .agency-heading h2 {margin:0;color:#06284f;font-size:24px;font-weight:800}
-    .agency-heading p {margin:7px 0 0;color:#71818e;font-size:12px;line-height:1.6}
-    .agency-report-link {display:inline-flex;align-items:center;gap:9px;padding:12px 17px;background:#164c96;color:white;border-radius:11px;font-size:12px;font-weight:750;box-shadow:0 7px 18px rgba(22,76,150,.15)}
-    .agency-report-link:hover {background:#0b315f;color:white}
-    .agency-report-link svg {width:17px;height:17px}
-    .agency-summary {margin-bottom:20px}
-    .agency-panels {display:grid;gap:20px}
-    .agency-table {min-width:850px}
-    .agency-table .table-primary {display:block}
-    .agency-table .table-secondary {display:block;margin-top:4px}
-    .agency-state {display:inline-block;padding:5px 9px;border-radius:8px;font-size:10px;font-weight:800;background:#edf3fa;color:#164c96}
-    .agency-state.certified,.agency-state.active {background:#e9f7ef;color:#16854d}
-    .agency-state.pending {background:#fff5df;color:#a46a0a}
-    .agency-state.annulled,.agency-state.inactive {background:#fcebec;color:#b33a3a}
-    .agency-empty {padding:28px 20px;text-align:center;color:#82909a;font-size:12px}
+.ger-dashboard{max-width:1500px;margin:0 auto;color:#183b59}
+.ger-dashboard *{box-sizing:border-box}
+.ger-head{margin-bottom:22px}.ger-head h2{margin:0 0 7px;color:#092f59;font-size:26px}.ger-head p{margin:0;color:#73899b;font-size:13px}
+.ger-welcome{padding:25px 28px;border-radius:18px;background:linear-gradient(115deg,#07345f,#164c96 65%,#128257);color:white;margin-bottom:23px;box-shadow:0 12px 28px #103c641c}
+.ger-welcome small{font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:.75}.ger-welcome h3{font-size:24px;margin:8px 0}.ger-welcome p{margin:0;font-size:13px;opacity:.85;line-height:1.65}
+.ger-switch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:24px}
+.ger-switch button{font:inherit;text-align:left;display:flex;align-items:center;gap:15px;background:white;border:2px solid #dde8f1;border-radius:15px;padding:18px;cursor:pointer;color:#153e64;transition:.15s;box-shadow:0 5px 15px #1439530b}
+.ger-switch button:hover{border-color:#86acd0}.ger-switch button[aria-selected="true"]{border-color:#164c96;background:#f0f6fe;box-shadow:0 7px 20px #164c961b}
+.ger-switch-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:#e8f1fb;color:#164c96}
+.ger-switch-icon svg{width:23px;height:23px}.ger-switch strong{display:block;font-size:15px}.ger-switch small{display:block;font-size:11px;color:#788d9e;margin-top:4px;line-height:1.4}
+.ger-pane[hidden]{display:none!important}.ger-pane-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;margin:0 0 19px}.ger-pane-heading h3{margin:0;color:#0a3158;font-size:21px}.ger-pane-heading p{margin:5px 0 0;color:#7b8d9c;font-size:12px}
+.ger-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:23px}
+.ger-stat{background:#fff;border:1px solid #e0e8ee;border-radius:15px;padding:19px;min-height:119px;box-shadow:0 6px 18px #1439530b}
+.ger-stat small{display:block;font-size:11px;font-weight:750;color:#74889a;text-transform:uppercase;letter-spacing:.35px}.ger-stat strong{display:block;margin:13px 0 6px;font-size:26px;color:#103c6a}.ger-stat span{font-size:11px;color:#8394a2}.ger-stat.green{border-color:#c7e8d3;background:#f9fdfa}.ger-stat.red{border-color:#f0cece;background:#fffbfb}.ger-stat.amber{border-color:#f0e1b9;background:#fffdf8}
+.ger-columns{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1.5fr);gap:18px;margin-bottom:20px}
+.ger-panel{background:#fff;border:1px solid #e0e8ee;border-radius:16px;overflow:hidden;margin-bottom:19px;box-shadow:0 6px 18px #1439530b}
+.ger-panel-header{padding:18px 20px;border-bottom:1px solid #e8eef3;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ger-panel-header h4{margin:0;color:#0a3158;font-size:16px}.ger-panel-header p{margin:5px 0 0;color:#7d8e9d;font-size:11px}
+.ger-panel-body{padding:20px}.ger-progress{height:13px;background:#e9eff4;border-radius:20px;overflow:hidden;margin:12px 0}.ger-progress>div{height:100%;background:linear-gradient(90deg,#164c96,#00a651);border-radius:20px}
+.ger-progress-label{display:flex;justify-content:space-between;font-size:12px;color:#62798d}.ger-progress-label strong{font-size:18px;color:#0a3158}
+.ger-mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-top:18px}.ger-mini{padding:12px;background:#f7fafc;border:1px solid #e6edf2;border-radius:10px}.ger-mini small{display:block;color:#71879a;font-size:10px}.ger-mini strong{display:block;font-size:19px;color:#143f67;margin-top:7px}
+.ger-note{font-size:11px;color:#718597;line-height:1.65;margin:15px 0 0}
+.ger-table-wrap{overflow-x:auto}.ger-table{width:100%;min-width:850px;border-collapse:collapse}.ger-table th,.ger-table td{padding:13px 15px;text-align:left;border-bottom:1px solid #eaf0f4;font-size:11px;vertical-align:middle}.ger-table th{background:#f5f9fc;color:#657c90;font-size:10px;text-transform:uppercase}.ger-table td{color:#405d73}.ger-table td strong{color:#123c62}.ger-table tr:last-child td{border-bottom:0}
+.ger-link{color:#164c96;font-size:12px;font-weight:800;text-decoration:none}.ger-link:hover{text-decoration:underline}
+/* Botones principales de navegación en los encabezados de cada sección */
+.ger-dashboard .ger-pane-heading .ger-link{display:inline-flex;align-items:center;justify-content:center;gap:9px;flex-shrink:0;min-height:43px;padding:11px 18px;border:1px solid #164c96;border-radius:11px;background:#164c96;color:#fff!important;font-size:12px;font-weight:800;line-height:1.25;text-align:center;text-decoration:none!important;box-shadow:0 6px 16px rgba(22,76,150,.17);transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.ger-dashboard .ger-pane-heading .ger-link:hover{background:#0b315f;border-color:#0b315f;color:#fff!important;transform:translateY(-1px);box-shadow:0 9px 20px rgba(22,76,150,.22)}
+.ger-dashboard .ger-pane-heading .ger-link:focus-visible{outline:3px solid #79b7f2;outline-offset:3px}
+@media(max-width:480px){.ger-dashboard .ger-pane-heading .ger-link{width:100%}}
+
+.ger-tag{display:inline-block;padding:5px 8px;border-radius:7px;background:#edf3fa;color:#164c96;font-size:10px;font-weight:800}.ger-tag.ok{background:#e8f7ee;color:#16834e}.ger-tag.bad{background:#fcebec;color:#b33a3a}.ger-tag.warn{background:#fff5df;color:#a46a0a}
+.ger-empty{padding:26px;text-align:center;color:#7c90a0;font-size:12px}
+.ger-agency-progress{min-width:100px;height:8px;background:#e6edf3;border-radius:10px;overflow:hidden}.ger-agency-progress>div{height:100%;background:linear-gradient(90deg,#1681c4,#00a651)}
+@media(max-width:1100px){.ger-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.ger-columns{grid-template-columns:1fr}}
+@media(max-width:680px){.ger-switch{grid-template-columns:1fr}.ger-stats{grid-template-columns:1fr 1fr;gap:9px}.ger-stat{padding:13px}.ger-stat strong{font-size:22px}.ger-welcome{padding:20px}.ger-mini-grid{grid-template-columns:1fr}}
 </style>
 @endpush
 
 @section('content')
 @php
-    $authUser = auth()->user();
-
-    $nombreGerencia =
-        $authUser?->nombre_completo
-        ?? $authUser?->usuario
-        ?? 'Gerencia';
+    $nombreGerencia = auth()->user()?->nombre_completo ?? auth()->user()?->usuario ?? 'Gerencia';
+    $turnosExigiblesInstitucional = $resumenAgencias->sum(fn ($a) => (int) ($a->arqueos_esperados ?? 0));
+    $turnosCumplidosInstitucional = $resumenAgencias->sum(fn ($a) => (int) ($a->arqueos_cumplidos ?? 0));
+    $turnosPendientesInstitucional = max(0, $turnosExigiblesInstitucional - $turnosCumplidosInstitucional);
+    $porcentajeInstitucional = $turnosExigiblesInstitucional > 0 ? min(100, round($turnosCumplidosInstitucional * 100 / $turnosExigiblesInstitucional, 1)) : null;
 @endphp
+<div class="ger-dashboard">
+    <header class="ger-head"><h2>Dashboard de Gerencia</h2><p>Supervisión ejecutiva de los arqueos institucionales.</p></header>
+    <section class="ger-welcome"><small>Vista ejecutiva</small><h3>{{ $nombreGerencia }}</h3><p>Consulte el estado operativo, el cumplimiento y las incidencias de Agentes MICOOPE y Agencias ECOSABA.</p></section>
 
-<div class="page-header">
-    <div class="page-title">
-        <h2>Dashboard de Gerencia</h2>
-
-        <p>
-            Vista ejecutiva del estado operativo, cumplimiento diario
-            e incidencias registradas en los arqueos.
-        </p>
+    <div class="ger-switch" role="tablist" aria-label="Seleccionar área del dashboard">
+        <button type="button" id="ger-tab-general" role="tab" aria-controls="ger-panel-general" aria-selected="true" data-ger-tab="general">
+            <span class="ger-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span><strong>General</strong><small>Panorama institucional</small></span>
+        </button>
+        <button type="button" id="ger-tab-agentes" role="tab" aria-controls="ger-panel-agentes" aria-selected="false" data-ger-tab="agentes" tabindex="-1">
+            <span class="ger-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a7 7 0 0 1 14 0v2M18 8h5M20.5 5.5v5"/></svg></span><span><strong>Agentes</strong><small>Operación MICOOPE</small></span>
+        </button>
+        <button type="button" id="ger-tab-agencias" role="tab" aria-controls="ger-panel-agencias" aria-selected="false" data-ger-tab="agencias" tabindex="-1">
+            <span class="ger-switch-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 21v-8h8v8M7 8h2m6 0h2"/></svg></span><span><strong>Agencias</strong><small>Operación ECOSABA</small></span>
+        </button>
     </div>
 
-    <div class="page-badge">
-        <span class="page-badge-dot"></span>
-        Supervisión ejecutiva
-    </div>
-</div>
-
-<section class="welcome-panel">
-    <div class="welcome-content">
-        <span>Vista ejecutiva</span>
-
-        <h2>{{ $nombreGerencia }}</h2>
-
-        <p>
-            Consulte el comportamiento diario de los arqueos,
-            el nivel de cumplimiento y las principales incidencias
-            operativas para apoyar la toma de decisiones.
-        </p>
-    </div>
-
-    <div class="welcome-status">
-        <span class="status-dot"></span>
-        Información actualizada
-    </div>
-</section>
-
-<section class="summary-grid">
-    <article class="summary-card info">
-        <div class="summary-card-header">
-            <span class="summary-label">Agentes activos</span>
-
-            <span class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M19 8v6"/>
-                    <path d="M16 11h6"/>
-                </svg>
-            </span>
+    <section class="ger-pane" id="ger-panel-general" role="tabpanel" aria-labelledby="ger-tab-general">
+        <div class="ger-pane-heading"><div><h3>Resumen institucional</h3><p>Indicadores de ambas operaciones, separados para evitar confundir agentes con agencias.</p></div></div>
+        <div class="ger-stats">
+            <article class="ger-stat"><small>Agentes activos</small><strong>{{ number_format($agentesActivos) }}</strong><span>MICOOPE</span></article>
+            <article class="ger-stat"><small>Agencias activas</small><strong>{{ number_format($indicadoresAgencias['agencias']) }}</strong><span>ECOSABA</span></article>
+            <article class="ger-stat"><small>Arqueos agentes hoy</small><strong>{{ number_format($arqueosHoy) }}</strong><span>Vigentes · MICOOPE</span></article>
+            <article class="ger-stat"><small>Arqueos agencias hoy</small><strong>{{ number_format($indicadoresAgencias['arqueos_hoy']) }}</strong><span>Vigentes · ECOSABA</span></article>
+            <article class="ger-stat green"><small>Cumplimiento agentes</small><strong>{{ number_format($cumplimiento,1) }}%</strong><span>Agentes activos con arqueo diario</span></article>
+            <article class="ger-stat green"><small>Cumplimiento agencias</small><strong>{{ $porcentajeInstitucional === null ? 'N/A' : number_format($porcentajeInstitucional,1).'%' }}</strong><span>Turnos exigibles con arqueo</span></article>
+            <article class="ger-stat amber"><small>Agentes pendientes hoy</small><strong>{{ number_format($agentesPendientesHoy) }}</strong><span>Sin arqueo diario vigente</span></article>
+            <article class="ger-stat amber"><small>Turnos pendientes agencias</small><strong>{{ number_format($turnosPendientesInstitucional) }}</strong><span>Turnos exigibles no cumplidos</span></article>
         </div>
-
-        <strong class="summary-value">{{ $agentesActivos }}</strong>
-        <span class="summary-description">Agentes habilitados en operación.</span>
-    </article>
-
-    <article class="summary-card">
-        <div class="summary-card-header">
-            <span class="summary-label">Arqueos hoy</span>
-
-            <span class="summary-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="5" width="18" height="14" rx="2"/>
-                    <path d="M7 9h10"/>
-                    <path d="M7 13h5"/>
-                </svg>
-            </span>
+        <div class="ger-columns">
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Cumplimiento MICOOPE</h4><p>Agentes activos con arqueo diario</p></div></header><div class="ger-panel-body"><div class="ger-progress-label"><span>Avance de hoy</span><strong>{{ number_format($cumplimiento,1) }}%</strong></div><div class="ger-progress"><div style="width:{{ min(100,max(0,$cumplimiento)) }}%"></div></div><p class="ger-note">{{ $agentesConArqueoHoy }} con arqueo de {{ $agentesActivos }} agentes activos.</p></div></article>
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Cumplimiento ECOSABA</h4><p>Turnos cuyo horario de cierre ya transcurrió</p></div></header><div class="ger-panel-body"><div class="ger-progress-label"><span>Avance de hoy</span><strong>{{ $porcentajeInstitucional === null ? 'N/A' : number_format($porcentajeInstitucional,1).'%' }}</strong></div><div class="ger-progress"><div style="width:{{ $porcentajeInstitucional ?? 0 }}%"></div></div><p class="ger-note">{{ $turnosCumplidosInstitucional }} de {{ $turnosExigiblesInstitucional }} turnos exigibles. Los turnos futuros no se cuentan como incumplidos.</p></div></article>
         </div>
-
-        <strong class="summary-value">{{ $arqueosHoy }}</strong>
-        <span class="summary-description">Total de arqueos registrados hoy.</span>
-    </article>
-
-    <article class="summary-card success">
-        <div class="summary-card-header">
-            <span class="summary-label">Arqueos exactos hoy</span>
-
-            <span class="summary-icon green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="m8 12 3 3 5-6"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $exactosHoy }}</strong>
-        <span class="summary-description">Arqueos sin diferencia registrada.</span>
-    </article>
-
-    <article class="summary-card warning">
-        <div class="summary-card-header">
-            <span class="summary-label">Pendientes hoy</span>
-
-            <span class="summary-icon orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 7v5l3 2"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $agentesPendientesHoy }}</strong>
-        <span class="summary-description">Agentes activos pendientes de arqueo.</span>
-    </article>
-
-    <article class="summary-card danger">
-        <div class="summary-card-header">
-            <span class="summary-label">Faltantes hoy</span>
-
-            <span class="summary-icon red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3v18"/>
-                    <path d="m7 16 5 5 5-5"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $faltantesHoy }}</strong>
-        <span class="summary-description">Arqueos con diferencia negativa.</span>
-    </article>
-
-    <article class="summary-card success">
-        <div class="summary-card-header">
-            <span class="summary-label">Sobrantes hoy</span>
-
-            <span class="summary-icon green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 21V3"/>
-                    <path d="m7 8 5-5 5 5"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $sobrantesHoy }}</strong>
-        <span class="summary-description">Arqueos con diferencia positiva.</span>
-    </article>
-
-    <article class="summary-card warning">
-        <div class="summary-card-header">
-            <span class="summary-label">Extemporáneos hoy</span>
-
-            <span class="summary-icon orange">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="5" width="18" height="16" rx="2"/>
-                    <path d="M16 3v4"/>
-                    <path d="M8 3v4"/>
-                    <path d="M3 10h18"/>
-                    <path d="M12 14v3"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $extemporaneosHoy }}</strong>
-        <span class="summary-description">Arqueos realizados fuera de fecha ordinaria.</span>
-    </article>
-
-    <article class="summary-card danger">
-        <div class="summary-card-header">
-            <span class="summary-label">Anulados hoy</span>
-
-            <span class="summary-icon red">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="m9 9 6 6"/>
-                    <path d="m15 9-6 6"/>
-                </svg>
-            </span>
-        </div>
-
-        <strong class="summary-value">{{ $anuladosHoy }}</strong>
-        <span class="summary-description">Arqueos anulados durante el día.</span>
-    </article>
-</section>
-
-<section class="content-grid">
-    <article class="panel">
-        <header class="panel-header">
-            <div class="panel-title">
-                <h3>Cumplimiento diario</h3>
-
-                <p>
-                    Agentes activos que realizaron su arqueo diario.
-                </p>
-            </div>
-        </header>
-
-        <div class="panel-body">
-            <div class="compliance-card">
-                <div class="progress-title">
-                    <span>Nivel de cumplimiento</span>
-
-                    <strong>
-                        {{ number_format($cumplimiento, 1) }}%
-                    </strong>
-                </div>
-
-                <div class="progress-bar">
-                    <div
-                        class="progress-value"
-                        style="width:{{ min(100, max(0, $cumplimiento)) }}%;"
-                    ></div>
-                </div>
-
-                <p class="compliance-description">
-                    Porcentaje de agentes activos que ya cuentan
-                    con arqueo diario registrado.
-                </p>
-            </div>
-
-            <div class="compliance-info">
-                <div class="mini-stat">
-                    <span>Con arqueo</span>
-                    <strong>{{ $agentesConArqueoHoy }}</strong>
-                </div>
-
-                <div class="mini-stat">
-                    <span>Pendientes</span>
-                    <strong>{{ $agentesPendientesHoy }}</strong>
-                </div>
-
-                <div class="mini-stat">
-                    <span>Arqueos Agente</span>
-                    <strong>{{ $arqueosAgenteHoy }}</strong>
-                </div>
-
-                <div class="mini-stat">
-                    <span>Arqueos Promotor</span>
-                    <strong>{{ $arqueosPromotorHoy }}</strong>
-                </div>
-            </div>
-
-            <div class="executive-note">
-                <strong>Lectura ejecutiva:</strong>
-                el cumplimiento diario permite identificar rápidamente
-                el nivel de avance de la operación y los agentes que aún
-                requieren seguimiento.
-            </div>
-        </div>
-    </article>
-
-    <article class="panel">
-        <header class="panel-header">
-            <div class="panel-title">
-                <h3>Últimos Arqueos</h3>
-
-                <p>
-                    Actividad reciente registrada en el sistema.
-                </p>
-            </div>
-
-            <a
-                href="{{ url('/gerencia/arqueos') }}"
-                class="panel-link"
-            >
-                Ver todos
-            </a>
-        </header>
-
-        @if($ultimosArqueos->isEmpty())
-            <div class="empty-record">
-                <div class="empty-record-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="5" width="18" height="14" rx="2"/>
-                        <path d="M7 9h10"/>
-                        <path d="M7 13h5"/>
-                    </svg>
-                </div>
-
-                <h4>No hay arqueos registrados</h4>
-
-                <p>
-                    Los movimientos recientes aparecerán aquí
-                    cuando existan registros disponibles.
-                </p>
-            </div>
-        @else
-            <div class="table-responsive">
-                <table class="recent-table">
-                    <thead>
-                        <tr>
-                            <th>Número</th>
-                            <th>Fecha</th>
-                            <th>Agente</th>
-                            <th>Región</th>
-                            <th>Ruta</th>
-                            <th>Tipo</th>
-                            <th>Diferencia</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach($ultimosArqueos as $arqueo)
-                            @php
-                                $diferencia =
-                                    (float) $arqueo->diferencia;
-
-                                $claseDiferencia =
-                                    $diferencia < 0
-                                        ? 'diff-negative'
-                                        : (
-                                            $diferencia > 0
-                                                ? 'diff-positive'
-                                                : 'diff-zero'
-                                        );
-
-                                $tipoClass =
-                                    $arqueo->tipo === 'DIARIO_AGENTE'
-                                        ? 'agent'
-                                        : (
-                                            $arqueo->tipo === 'VISITA_PROMOTOR'
-                                                ? 'promoter'
-                                                : 'audit'
-                                        );
-
-                                $tipoTexto =
-                                    $arqueo->tipo === 'DIARIO_AGENTE'
-                                        ? 'Agente'
-                                        : (
-                                            $arqueo->tipo === 'VISITA_PROMOTOR'
-                                                ? 'Promotor'
-                                                : (
-                                                    $arqueo->tipo === 'VISITA_AUDITORIA'
-                                                        ? 'Auditoría'
-                                                        : str_replace(
-                                                            '_',
-                                                            ' ',
-                                                            $arqueo->tipo
-                                                        )
-                                                )
-                                        );
-                            @endphp
-
-                            <tr>
-                                <td>
-                                    <span class="table-primary">
-                                        {{ $arqueo->numero_arqueo }}
-                                    </span>
-                                </td>
-
-                                <td class="table-secondary">
-                                    {{ \Carbon\Carbon::parse(
-                                        $arqueo->fecha_arqueo
-                                    )->format('d/m/Y') }}
-                                </td>
-
-                                <td>
-                                    <span class="table-primary">
-                                        {{ $arqueo->codigo_agente }}
-                                    </span>
-
-                                    <span class="table-secondary">
-                                        — {{ $arqueo->nombre_negocio }}
-                                    </span>
-                                </td>
-
-                                <td class="table-secondary">
-                                    {{ $arqueo->region_nombre ?? '—' }}
-                                </td>
-
-                                <td class="table-secondary">
-                                    {{ $arqueo->ruta_nombre ?? '—' }}
-                                </td>
-
-                                <td>
-                                    <span class="type-badge {{ $tipoClass }}">
-                                        {{ $tipoTexto }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <span class="{{ $claseDiferencia }}">
-                                        Q {{ number_format(
-                                            abs($diferencia),
-                                            2
-                                        ) }}
-
-                                        @if($diferencia < 0)
-                                            Faltante
-                                        @elseif($diferencia > 0)
-                                            Sobrante
-                                        @else
-                                            Exacto
-                                        @endif
-                                    </span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
-    </article>
-</section>
-
-<section id="supervision-agencias" aria-labelledby="agency-title">
-    <header class="agency-heading">
-        <div>
-            <span class="agency-section-marker">Agencias ECOSABA</span>
-            <h2 id="agency-title">Supervisión institucional de agencias</h2>
-            <p>Indicadores operativos del {{ \Illuminate\Support\Carbon::parse($fechaAgencias)->locale('es')->translatedFormat('d \d\e F \d\e Y') }} · Consulta institucional de todas las agencias.</p>
-        </div>
-        <a class="agency-report-link" href="{{ route('agencias.reportes.index') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M6 16V9M12 16V5M18 16v-4"/></svg>
-            Centro de Reportes
-        </a>
-    </header>
-    <div class="summary-grid agency-summary">
-        <article class="summary-card info">
-            <div class="summary-card-header">
-                <span class="summary-label">Agencias activas</span>
-                <span class="summary-icon "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 21V9h8v12M7 7h.01M17 7h.01"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['agencias']) }}</strong>
-            <span class="summary-description">Edificios habilitados para operar.</span>
-        </article>
-        <article class="summary-card ">
-            <div class="summary-card-header">
-                <span class="summary-label">Ventanillas activas</span>
-                <span class="summary-icon "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 11h18M8 15h3"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['ventanillas']) }}</strong>
-            <span class="summary-description">Ventanillas habilitadas.</span>
-        </article>
-        <article class="summary-card ">
-            <div class="summary-card-header">
-                <span class="summary-label">Arqueos hoy</span>
-                <span class="summary-icon "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['arqueos_hoy']) }}</strong>
-            <span class="summary-description">Registros de agencias durante el día.</span>
-        </article>
-        <article class="summary-card success">
-            <div class="summary-card-header">
-                <span class="summary-label">Certificados hoy</span>
-                <span class="summary-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['certificados_hoy']) }}</strong>
-            <span class="summary-description">Arqueos certificados en agencias.</span>
-        </article>
-        <article class="summary-card warning">
-            <div class="summary-card-header">
-                <span class="summary-label">Pendientes de certificar</span>
-                <span class="summary-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['pendientes_hoy']) }}</strong>
-            <span class="summary-description">Arqueos en espera de certificación.</span>
-        </article>
-        <article class="summary-card danger">
-            <div class="summary-card-header">
-                <span class="summary-label">Con faltante</span>
-                <span class="summary-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18m-5-5 5 5 5-5"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['faltantes_hoy']) }}</strong>
-            <span class="summary-description">Arqueos con diferencia negativa.</span>
-        </article>
-        <article class="summary-card success">
-            <div class="summary-card-header">
-                <span class="summary-label">Con sobrante</span>
-                <span class="summary-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V3m-5 5 5-5 5 5"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['sobrantes_hoy']) }}</strong>
-            <span class="summary-description">Arqueos con diferencia positiva.</span>
-        </article>
-        <article class="summary-card danger">
-            <div class="summary-card-header">
-                <span class="summary-label">Anulados hoy</span>
-                <span class="summary-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></svg></span>
-            </div>
-            <strong class="summary-value">{{ number_format($indicadoresAgencias['anulados_hoy']) }}</strong>
-            <span class="summary-description">Arqueos anulados durante el día.</span>
-        </article>
-    </div>
-    @php
-        $turnosExigiblesInstitucional = $resumenAgencias->sum(fn ($agencia) => (int) ($agencia->arqueos_esperados ?? 0));
-        $turnosCumplidosInstitucional = $resumenAgencias->sum(fn ($agencia) => (int) ($agencia->arqueos_cumplidos ?? 0));
-        $turnosPendientesInstitucional = max(0, $turnosExigiblesInstitucional - $turnosCumplidosInstitucional);
-        $porcentajeInstitucional = $turnosExigiblesInstitucional > 0
-            ? min(100, round($turnosCumplidosInstitucional * 100 / $turnosExigiblesInstitucional, 1))
-            : null;
-    @endphp
-    <section class="content-grid" aria-label="Cumplimiento y últimos arqueos de agencias" style="margin-bottom:22px">
-        <article class="panel">
-            <header class="panel-header">
-                <div class="panel-title">
-                    <h3>Cumplimiento diario de agencias</h3>
-                    <p>Turnos finalizados con arqueo ordinario registrado.</p>
-                </div>
-            </header>
-            <div class="panel-body">
-                <div class="compliance-card">
-                    <div class="progress-title">
-                        <span>Nivel de cumplimiento</span>
-                        <strong>{{ $porcentajeInstitucional === null ? 'N/A' : number_format($porcentajeInstitucional, 1) . '%' }}</strong>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-value" style="width:{{ $porcentajeInstitucional ?? 0 }}%;"></div>
-                    </div>
-                    <p class="compliance-description">
-                        @if($porcentajeInstitucional === null)
-                            Aún no hay turnos exigibles para calcular el porcentaje.
-                        @else
-                            Porcentaje de turnos exigibles con arqueo ordinario vigente.
-                        @endif
-                    </p>
-                </div>
-                <div class="compliance-info">
-                    <div class="mini-stat"><span>Con arqueo</span><strong>{{ $turnosCumplidosInstitucional }}</strong></div>
-                    <div class="mini-stat"><span>Pendientes</span><strong>{{ $turnosPendientesInstitucional }}</strong></div>
-                    <div class="mini-stat"><span>Turnos exigibles</span><strong>{{ $turnosExigiblesInstitucional }}</strong></div>
-                    <div class="mini-stat"><span>Agencias activas</span><strong>{{ $indicadoresAgencias['agencias'] }}</strong></div>
-                </div>
-                <div class="executive-note">
-                    <strong>Lectura ejecutiva:</strong> el indicador considera únicamente los turnos cuyo cierre ya transcurrió. Los turnos futuros no se contabilizan como incumplidos.
-                </div>
-            </div>
-        </article>
-        <article class="panel">
-            <header class="panel-header">
-                <div class="panel-title">
-                    <h3>Últimos Arqueos de Agencias</h3>
-                    <p>Actividad reciente registrada en las agencias.</p>
-                </div>
-                <a class="panel-link" href="{{ route('agencias.reportes.index') }}">Ver todos</a>
-            </header>
-            <div class="table-responsive">
-                <table class="recent-table agency-table">
-                    <thead><tr><th>Número</th><th>Fecha</th><th>Agencia</th><th>Receptor</th><th>Tipo</th><th>Estado</th><th>Diferencia</th></tr></thead>
-                    <tbody>
-                    @forelse($ultimosArqueosAgencias as $arqueo)
-                        <tr>
-                            <td><span class="table-primary">{{ $arqueo->numero_arqueo }}</span></td>
-                            <td class="table-secondary">{{ \Illuminate\Support\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y') }}</td>
-                            <td><span class="table-primary">{{ $arqueo->agencia_nombre_historico }}</span></td>
-                            <td class="table-secondary">{{ $arqueo->receptor_nombre_historico }}</td>
-                            <td><span class="type-badge agent">{{ str_replace('_', ' ', $arqueo->tipo) }}</span></td>
-                            <td><span class="agency-state {{ $arqueo->estado === 'CERTIFICADO' ? 'certified' : ($arqueo->estado === 'ANULADO' ? 'annulled' : 'pending') }}">{{ $arqueo->estado }}</span></td>
-                            <td><span class="{{ $arqueo->diferencia < 0 ? 'diff-negative' : ($arqueo->diferencia > 0 ? 'diff-positive' : 'diff-zero') }}">Q {{ number_format(abs((float) $arqueo->diferencia), 2) }} {{ $arqueo->diferencia < 0 ? 'Faltante' : ($arqueo->diferencia > 0 ? 'Sobrante' : 'Exacto') }}</span></td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="7" class="agency-empty">No hay arqueos registrados en agencias.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </article>
     </section>
-    <div class="agency-panels">
-        <article class="panel">
-            <header class="panel-header">
-                <div class="panel-title"><h3>Resumen por agencia — hoy</h3><p>Seguimiento de arqueos, certificaciones y cumplimiento de turnos por agencia.</p></div>
-                <a class="panel-link" href="{{ route('agencias.reportes.index') }}">Ver reportes &rarr;</a>
-            </header>
-            <div class="table-responsive">
-                <table class="recent-table agency-table">
-                    <thead><tr><th>Agencia</th><th>Estado</th><th>Cumplimiento</th><th>Arqueos</th><th>Certificados</th><th>Pendientes</th><th>Faltantes</th><th>Sobrantes</th><th>Reportes</th></tr></thead>
-                    <tbody>
-                        @forelse($resumenAgencias as $agencia)
-                            @php
-                                $esperados = (int) ($agencia->arqueos_esperados ?? 0);
-                                $cumplidos = (int) ($agencia->arqueos_cumplidos ?? 0);
-                                $porcentajeAgencia = $esperados > 0 ? round(min(100, ($cumplidos / $esperados) * 100), 1) : null;
-                            @endphp
-                            <tr>
-                                <td><span class="table-primary">{{ $agencia->nombre }}</span><span class="table-secondary">{{ $agencia->codigo }}</span></td>
-                                <td><span class="agency-state {{ $agencia->estado ? 'active' : 'inactive' }}">{{ $agencia->estado ? 'Activa' : 'Inactiva' }}</span></td>
-                                <td>
-                                    <div class="agency-compliance" aria-label="{{ $porcentajeAgencia === null ? 'Sin turnos exigibles' : 'Cumplimiento de ' . $porcentajeAgencia . ' por ciento' }}">
-                                        <div class="agency-compliance-track"><div class="agency-compliance-fill {{ $porcentajeAgencia === null ? 'none' : ($porcentajeAgencia < 60 ? 'low' : '') }}" style="width:{{ $porcentajeAgencia ?? 0 }}%"></div></div>
-                                        <strong>{{ $porcentajeAgencia === null ? 'N/A' : number_format($porcentajeAgencia, 1) . '%' }}</strong>
-                                    </div>
-                                    <span class="agency-compliance-detail">{{ $cumplidos }} de {{ $esperados }} turnos exigibles</span>
-                                </td>
-                                <td class="table-primary">{{ number_format($agencia->total_hoy) }}</td>
-                                <td><span class="agency-state certified">{{ number_format($agencia->certificados_hoy) }}</span></td>
-                                <td><span class="agency-state pending">{{ number_format($agencia->pendientes_hoy) }}</span></td>
-                                <td class="diff-negative">{{ number_format($agencia->faltantes_hoy) }}</td>
-                                <td class="diff-positive">{{ number_format($agencia->sobrantes_hoy) }}</td>
-                                <td><a class="panel-link" href="{{ route('agencias.reportes.index', ['agencia_id' => $agencia->id]) }}">Consultar &rarr;</a></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="9" class="agency-empty">No hay agencias registradas.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <p class="agency-compliance-note">El porcentaje compara turnos programados cuyo horario de cierre ya transcurrió contra turnos con arqueo ordinario vigente registrado. Los turnos aún no finalizados no se consideran incumplidos.</p>
-        </article>
 
-    </div>
-</section>
+    <section class="ger-pane" id="ger-panel-agentes" role="tabpanel" aria-labelledby="ger-tab-agentes" hidden>
+        <div class="ger-pane-heading"><div><h3>Supervisión de Agentes MICOOPE</h3><p>Arqueos y cumplimiento de agentes.</p></div><a class="ger-link" href="{{ url('/gerencia/arqueos') }}">Consultar arqueos</a></div>
+        <div class="ger-stats">
+            <article class="ger-stat"><small>Agentes activos</small><strong>{{ number_format($agentesActivos) }}</strong><span>De {{ $totalAgentes }} registrados</span></article>
+            <article class="ger-stat"><small>Arqueos hoy</small><strong>{{ number_format($arqueosHoy) }}</strong><span>No anulados</span></article>
+            <article class="ger-stat green"><small>Exactos hoy</small><strong>{{ number_format($exactosHoy) }}</strong><span>Sin diferencia</span></article>
+            <article class="ger-stat amber"><small>Agentes pendientes</small><strong>{{ number_format($agentesPendientesHoy) }}</strong><span>Sin arqueo diario</span></article>
+            <article class="ger-stat red"><small>Faltantes hoy</small><strong>{{ number_format($faltantesHoy) }}</strong><span>Diferencia negativa</span></article>
+            <article class="ger-stat green"><small>Sobrantes hoy</small><strong>{{ number_format($sobrantesHoy) }}</strong><span>Diferencia positiva</span></article>
+            <article class="ger-stat amber"><small>Extemporáneos hoy</small><strong>{{ number_format($extemporaneosHoy) }}</strong><span>Fuera de fecha ordinaria</span></article>
+            <article class="ger-stat red"><small>Anulados hoy</small><strong>{{ number_format($anuladosHoy) }}</strong><span>Registros anulados</span></article>
+        </div>
+        <div class="ger-columns">
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Cumplimiento diario</h4><p>Agentes activos con arqueo diario</p></div></header><div class="ger-panel-body"><div class="ger-progress-label"><span>Nivel de cumplimiento</span><strong>{{ number_format($cumplimiento,1) }}%</strong></div><div class="ger-progress"><div style="width:{{ min(100,max(0,$cumplimiento)) }}%"></div></div><div class="ger-mini-grid"><div class="ger-mini"><small>Con arqueo</small><strong>{{ $agentesConArqueoHoy }}</strong></div><div class="ger-mini"><small>Pendientes</small><strong>{{ $agentesPendientesHoy }}</strong></div><div class="ger-mini"><small>Arqueos agente</small><strong>{{ $arqueosAgenteHoy }}</strong></div><div class="ger-mini"><small>Arqueos promotor</small><strong>{{ $arqueosPromotorHoy }}</strong></div></div><p class="ger-note">El cumplimiento permite identificar agentes que requieren seguimiento.</p></div></article>
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Últimos arqueos de agentes</h4><p>Actividad reciente MICOOPE</p></div><a class="ger-link" href="{{ url('/gerencia/arqueos') }}">Ver todos</a></header><div class="ger-table-wrap"><table class="ger-table"><thead><tr><th>Número</th><th>Fecha</th><th>Agente</th><th>Región</th><th>Ruta</th><th>Tipo</th><th>Diferencia</th></tr></thead><tbody>@forelse($ultimosArqueos as $arqueo)<tr><td><strong>{{ $arqueo->numero_arqueo }}</strong></td><td>{{ \Carbon\Carbon::parse($arqueo->fecha_arqueo)->format('d/m/Y') }}</td><td><strong>{{ $arqueo->codigo_agente }}</strong><div>{{ $arqueo->nombre_negocio }}</div></td><td>{{ $arqueo->region_nombre ?? '—' }}</td><td>{{ $arqueo->ruta_nombre ?? '—' }}</td><td><span class="ger-tag">{{ match($arqueo->tipo) {'DIARIO_AGENTE'=>'Agente','VISITA_PROMOTOR'=>'Promotor','VISITA_AUDITORIA'=>'Auditoría',default=>str_replace('_',' ',$arqueo->tipo)} }}</span></td><td><strong>{{ $arqueo->diferencia < 0 ? 'Faltante' : ($arqueo->diferencia > 0 ? 'Sobrante' : 'Exacto') }}</strong><div>Q {{ number_format(abs((float)$arqueo->diferencia),2) }}</div></td></tr>@empty<tr><td colspan="7" class="ger-empty">No hay arqueos registrados.</td></tr>@endforelse</tbody></table></div></article>
+        </div>
+    </section>
+
+    <section class="ger-pane" id="ger-panel-agencias" role="tabpanel" aria-labelledby="ger-tab-agencias" hidden>
+        <div class="ger-pane-heading"><div><h3>Supervisión de Agencias ECOSABA</h3><p>Indicadores operativos del {{ \Illuminate\Support\Carbon::parse($fechaAgencias)->locale('es')->translatedFormat('d \d\e F \d\e Y') }}.</p></div><a class="ger-link" href="{{ route('agencias.reportes.index') }}">Centro de Reportes</a></div>
+        <div class="ger-stats">
+            <article class="ger-stat"><small>Agencias activas</small><strong>{{ number_format($indicadoresAgencias['agencias']) }}</strong><span>Habilitadas</span></article>
+            <article class="ger-stat"><small>Ventanillas activas</small><strong>{{ number_format($indicadoresAgencias['ventanillas']) }}</strong><span>Habilitadas</span></article>
+            <article class="ger-stat"><small>Arqueos hoy</small><strong>{{ number_format($indicadoresAgencias['arqueos_hoy']) }}</strong><span>No anulados</span></article>
+            <article class="ger-stat green"><small>Certificados hoy</small><strong>{{ number_format($indicadoresAgencias['certificados_hoy']) }}</strong><span>Con certificación</span></article>
+            <article class="ger-stat amber"><small>Pendientes de certificar</small><strong>{{ number_format($indicadoresAgencias['pendientes_hoy']) }}</strong><span>Sin certificación</span></article>
+            <article class="ger-stat red"><small>Con faltante</small><strong>{{ number_format($indicadoresAgencias['faltantes_hoy']) }}</strong><span>Diferencia negativa</span></article>
+            <article class="ger-stat green"><small>Con sobrante</small><strong>{{ number_format($indicadoresAgencias['sobrantes_hoy']) }}</strong><span>Diferencia positiva</span></article>
+            <article class="ger-stat red"><small>Anulados hoy</small><strong>{{ number_format($indicadoresAgencias['anulados_hoy']) }}</strong><span>Registros anulados</span></article>
+        </div>
+        <div class="ger-columns">
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Cumplimiento diario de agencias</h4><p>Turnos finalizados con arqueo ordinario</p></div></header><div class="ger-panel-body"><div class="ger-progress-label"><span>Nivel de cumplimiento</span><strong>{{ $porcentajeInstitucional === null ? 'N/A' : number_format($porcentajeInstitucional,1).'%' }}</strong></div><div class="ger-progress"><div style="width:{{ $porcentajeInstitucional ?? 0 }}%"></div></div><div class="ger-mini-grid"><div class="ger-mini"><small>Con arqueo</small><strong>{{ $turnosCumplidosInstitucional }}</strong></div><div class="ger-mini"><small>Pendientes</small><strong>{{ $turnosPendientesInstitucional }}</strong></div><div class="ger-mini"><small>Turnos exigibles</small><strong>{{ $turnosExigiblesInstitucional }}</strong></div><div class="ger-mini"><small>Agencias activas</small><strong>{{ $indicadoresAgencias['agencias'] }}</strong></div></div><p class="ger-note">Solo se consideran exigibles los turnos cuyo cierre ya transcurrió.</p></div></article>
+            <article class="ger-panel"><header class="ger-panel-header"><div><h4>Últimos arqueos de agencias</h4><p>Actividad reciente ECOSABA</p></div><a class="ger-link" href="{{ route('agencias.reportes.index') }}">Ver todos</a></header><div class="ger-table-wrap"><table class="ger-table"><thead><tr><th>Número</th><th>Fecha</th><th>Agencia</th><th>Receptor</th><th>Tipo</th><th>Estado</th><th>Diferencia</th></tr></thead><tbody>@forelse($ultimosArqueosAgencias as $arqueo)<tr><td><strong>{{ $arqueo->numero_arqueo }}</strong></td><td>{{ \Illuminate\Support\Carbon::parse($arqueo->fecha_operativa)->format('d/m/Y') }}</td><td><strong>{{ $arqueo->agencia_nombre_historico }}</strong></td><td>{{ $arqueo->receptor_nombre_historico ?? '—' }}</td><td><span class="ger-tag">{{ str_replace('_',' ',$arqueo->tipo) }}</span></td><td><span class="ger-tag {{ $arqueo->estado === 'CERTIFICADO' ? 'ok' : ($arqueo->estado === 'ANULADO' ? 'bad' : 'warn') }}">{{ $arqueo->estado }}</span></td><td>Q {{ number_format(abs((float)$arqueo->diferencia),2) }}<div>{{ $arqueo->diferencia < 0 ? 'Faltante' : ($arqueo->diferencia > 0 ? 'Sobrante' : 'Exacto') }}</div></td></tr>@empty<tr><td colspan="7" class="ger-empty">No hay arqueos registrados en agencias.</td></tr>@endforelse</tbody></table></div></article>
+        </div>
+        <article class="ger-panel"><header class="ger-panel-header"><div><h4>Resumen por agencia — hoy</h4><p>Certificaciones, diferencias y cumplimiento de turnos</p></div><a class="ger-link" href="{{ route('agencias.reportes.index') }}">Ver reportes</a></header><div class="ger-table-wrap"><table class="ger-table"><thead><tr><th>Agencia</th><th>Estado</th><th>Cumplimiento</th><th>Arqueos</th><th>Certificados</th><th>Pendientes</th><th>Faltantes</th><th>Sobrantes</th><th>Reportes</th></tr></thead><tbody>@forelse($resumenAgencias as $agencia)@php $esperados=(int)($agencia->arqueos_esperados??0);$cumplidos=(int)($agencia->arqueos_cumplidos??0);$porcentajeAgencia=$esperados>0?min(100,round($cumplidos*100/$esperados,1)):null; @endphp<tr><td><strong>{{ $agencia->nombre }}</strong><div>{{ $agencia->codigo }}</div></td><td><span class="ger-tag {{ $agencia->estado ? 'ok' : 'bad' }}">{{ $agencia->estado ? 'Activa' : 'Inactiva' }}</span></td><td><strong>{{ $porcentajeAgencia===null?'N/A':number_format($porcentajeAgencia,1).'%' }}</strong><div class="ger-agency-progress"><div style="width:{{ $porcentajeAgencia??0 }}%"></div></div><small>{{ $cumplidos }} de {{ $esperados }} turnos</small></td><td>{{ number_format($agencia->total_hoy) }}</td><td>{{ number_format($agencia->certificados_hoy) }}</td><td>{{ number_format($agencia->pendientes_hoy) }}</td><td>{{ number_format($agencia->faltantes_hoy) }}</td><td>{{ number_format($agencia->sobrantes_hoy) }}</td><td><a class="ger-link" href="{{ route('agencias.reportes.index',['agencia_id'=>$agencia->id]) }}">Consultar</a></td></tr>@empty<tr><td colspan="9" class="ger-empty">No hay agencias registradas.</td></tr>@endforelse</tbody></table></div><div class="ger-panel-body"><p class="ger-note">El cumplimiento se calcula con turnos programados cuyo horario de cierre ya transcurrió y que tienen arqueo ordinario vigente.</p></div></article>
+    </section>
+</div>
+<script>
+(function () {
+    const tabs = Array.from(document.querySelectorAll('[data-ger-tab]'));
+    const allowed = ['general','agentes','agencias'];
+    function activate(name, updateUrl) {
+        if (!allowed.includes(name)) name = 'general';
+        tabs.forEach(function (tab) {
+            const selected = tab.dataset.gerTab === name;
+            tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+            tab.tabIndex = selected ? 0 : -1;
+        });
+        allowed.forEach(function (key) {
+            document.getElementById('ger-panel-' + key).hidden = key !== name;
+        });
+        if (updateUrl && window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search + '#' + name);
+        }
+    }
+    tabs.forEach(function (tab, index) {
+        tab.addEventListener('click', function () { activate(tab.dataset.gerTab, true); });
+        tab.addEventListener('keydown', function (event) {
+            if (!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)) return;
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+            tabs[next].focus();
+            activate(tabs[next].dataset.gerTab, true);
+        });
+    });
+    window.addEventListener('hashchange', function () { activate(window.location.hash.slice(1), false); });
+    activate(window.location.hash.slice(1), false);
+})();
+</script>
 @endsection

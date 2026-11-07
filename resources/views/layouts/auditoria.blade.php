@@ -1,18 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>@yield('title', 'Auditoría') | Sistema Integral de Arqueos</title>
-
     @vite([
         'resources/css/app.css',
         'resources/js/app.js'
     ])
-
     <style>
         :root {
             --azul-principal: #164c96;
@@ -30,15 +26,12 @@
             --sidebar-width: 278px;
             --header-height: 74px;
         }
-
         * {
             box-sizing: border-box;
         }
-
         html, body {
             min-height: 100%;
         }
-
         body {
             margin: 0;
             min-height: 100vh;
@@ -49,20 +42,16 @@
                 -apple-system, BlinkMacSystemFont,
                 "Segoe UI", sans-serif;
         }
-
         a {
             color: inherit;
             text-decoration: none;
         }
-
         button, input, select, textarea {
             font: inherit;
         }
-
         .app-layout {
             min-height: 100vh;
         }
-
         .sidebar {
             position: fixed;
             z-index: 50;
@@ -83,14 +72,12 @@
             box-shadow: 10px 0 30px rgba(4,36,70,.13);
             transition: transform .25s ease;
         }
-
         .sidebar-decoration {
             position: absolute;
             inset: 0;
             overflow: hidden;
             pointer-events: none;
         }
-
         .sidebar-decoration::before {
             content: "";
             position: absolute;
@@ -101,7 +88,6 @@
             border: 52px solid rgba(255,255,255,.04);
             border-radius: 50%;
         }
-
         .sidebar-decoration::after {
             content: "";
             position: absolute;
@@ -112,7 +98,6 @@
             border-radius: 50%;
             background: rgba(255,255,255,.035);
         }
-
         .sidebar-header,
         .sidebar-user,
         .sidebar-navigation,
@@ -120,12 +105,10 @@
             position: relative;
             z-index: 2;
         }
-
         .sidebar-header {
             padding: 24px 22px 20px;
             border-bottom: 1px solid rgba(255,255,255,.10);
         }
-
         .sidebar-logo-box {
             display: flex;
             justify-content: center;
@@ -134,7 +117,6 @@
             background: rgba(255,255,255,.97);
             box-shadow: 0 12px 26px rgba(0,0,0,.14);
         }
-
         .sidebar-logo {
             display: block;
             width: 100%;
@@ -142,19 +124,16 @@
             height: 62px;
             object-fit: contain;
         }
-
         .sidebar-system-name {
             margin-top: 17px;
             text-align: center;
         }
-
         .sidebar-system-name strong {
             display: block;
             font-size: 14px;
             line-height: 1.4;
             letter-spacing: .1px;
         }
-
         .sidebar-system-name span {
             display: block;
             margin-top: 5px;
@@ -163,7 +142,6 @@
             letter-spacing: .7px;
             text-transform: uppercase;
         }
-
         .sidebar-user {
             display: flex;
             align-items: center;
@@ -174,7 +152,6 @@
             border-radius: 15px;
             background: rgba(255,255,255,.08);
         }
-
         .sidebar-user-avatar {
             flex: 0 0 auto;
             width: 43px;
@@ -185,16 +162,13 @@
             background: rgba(255,255,255,.14);
             color: #7be4aa;
         }
-
         .sidebar-user-avatar svg {
             width: 23px;
             height: 23px;
         }
-
         .sidebar-user-info {
             min-width: 0;
         }
-
         .sidebar-user-info strong {
             display: block;
             overflow: hidden;
@@ -203,7 +177,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
         .sidebar-user-info span {
             display: block;
             margin-top: 4px;
@@ -213,12 +186,10 @@
             letter-spacing: .7px;
             text-transform: uppercase;
         }
-
         .sidebar-navigation {
             flex: 1;
             padding: 18px 14px 22px;
         }
-
         .navigation-label {
             margin: 17px 11px 9px;
             color: rgba(255,255,255,.43);
@@ -228,17 +199,14 @@
             text-transform: uppercase;
             line-height: 1.5;
         }
-
         .navigation-label:first-child {
             margin-top: 0;
         }
-
         .navigation-list {
             display: grid;
             gap: 7px;
             margin-bottom: 17px;
         }
-
         .navigation-link {
             position: relative;
             display: flex;
@@ -256,13 +224,11 @@
                 background .2s ease,
                 transform .2s ease;
         }
-
         .navigation-link:hover {
             transform: translateX(3px);
             background: rgba(255,255,255,.09);
             color: var(--blanco);
         }
-
         .navigation-link.active {
             background: linear-gradient(
                 135deg,
@@ -272,7 +238,6 @@
             color: var(--blanco);
             box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
         }
-
         .navigation-link.active::before {
             content: "";
             position: absolute;
@@ -283,7 +248,6 @@
             border-radius: 0 5px 5px 0;
             background: #70df9f;
         }
-
         .navigation-icon {
             flex: 0 0 auto;
             width: 34px;
@@ -293,32 +257,26 @@
             border-radius: 10px;
             background: rgba(255,255,255,.08);
         }
-
         .navigation-link.active .navigation-icon {
             background: rgba(112,223,159,.16);
             color: #7be4aa;
         }
-
         .navigation-icon svg {
             width: 19px;
             height: 19px;
         }
-
         .navigation-link.pending {
             opacity: .58;
             cursor: not-allowed;
         }
-
         .navigation-link.pending:hover {
             transform: none;
             background: transparent;
         }
-
         .navigation-text {
             flex: 1;
             min-width: 0;
         }
-
         .pending-label {
             display: block;
             margin-top: 3px;
@@ -326,12 +284,10 @@
             font-weight: 600;
             color: rgba(255,255,255,.60);
         }
-
         .sidebar-footer {
             padding: 17px 18px 20px;
             border-top: 1px solid rgba(255,255,255,.09);
         }
-
         .logout-button {
             width: 100%;
             min-height: 45px;
@@ -348,23 +304,19 @@
             cursor: pointer;
             transition: background .2s ease, color .2s ease;
         }
-
         .logout-button:hover {
             background: rgba(255,255,255,.14);
             color: var(--blanco);
         }
-
         .logout-button svg {
             width: 18px;
             height: 18px;
         }
-
         .main-area {
             min-height: 100vh;
             margin-left: var(--sidebar-width);
             transition: margin-left .25s ease;
         }
-
         .topbar {
             position: sticky;
             z-index: 30;
@@ -380,14 +332,12 @@
             backdrop-filter: blur(16px);
             box-shadow: 0 3px 13px rgba(22,58,85,.035);
         }
-
         .topbar-left {
             display: flex;
             align-items: center;
             gap: 14px;
             min-width: 0;
         }
-
         .mobile-menu-button {
             width: 42px;
             height: 42px;
@@ -399,16 +349,13 @@
             color: var(--azul-principal);
             cursor: pointer;
         }
-
         .mobile-menu-button svg {
             width: 22px;
             height: 22px;
         }
-
         .topbar-title {
             min-width: 0;
         }
-
         .topbar-title h1 {
             margin: 0;
             overflow: hidden;
@@ -418,7 +365,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
         .topbar-title p {
             margin: 4px 0 0;
             overflow: hidden;
@@ -427,13 +373,11 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-
         .topbar-right {
             display: flex;
             align-items: center;
             gap: 14px;
         }
-
         .current-date {
             display: flex;
             align-items: center;
@@ -442,26 +386,22 @@
             font-size: 12px;
             font-weight: 650;
         }
-
         .current-date svg {
             width: 17px;
             height: 17px;
             color: var(--verde-principal);
         }
-
         .topbar-logo {
             width: 66px;
             height: 54px;
             object-fit: contain;
         }
-
         .content-wrapper {
             width: 100%;
             max-width: 1550px;
             margin: 0 auto;
             padding: 28px 30px 45px;
         }
-
         .page-header {
             display: flex;
             align-items: flex-start;
@@ -469,21 +409,18 @@
             gap: 25px;
             margin-bottom: 25px;
         }
-
         .page-title h2 {
             margin: 0;
             color: var(--azul-profundo);
             font-size: 28px;
             letter-spacing: -.7px;
         }
-
         .page-title p {
             margin: 8px 0 0;
             color: var(--texto-secundario);
             font-size: 14px;
             line-height: 1.55;
         }
-
         .page-badge {
             display: inline-flex;
             align-items: center;
@@ -496,7 +433,6 @@
             font-size: 11px;
             font-weight: 750;
         }
-
         .page-badge-dot {
             width: 7px;
             height: 7px;
@@ -504,7 +440,6 @@
             background: var(--verde-principal);
             box-shadow: 0 0 0 4px rgba(0,166,81,.11);
         }
-
         .alert-message {
             margin-bottom: 22px;
             padding: 14px 16px;
@@ -512,19 +447,16 @@
             font-size: 13px;
             line-height: 1.5;
         }
-
         .alert-message.success {
             border: 1px solid #b9e1c8;
             background: #effaf3;
             color: #176c40;
         }
-
         .alert-message.error {
             border: 1px solid #f0c9c9;
             background: #fff7f7;
             color: #a93636;
         }
-
         .sidebar-overlay {
             position: fixed;
             z-index: 45;
@@ -533,97 +465,77 @@
             background: rgba(4,27,49,.52);
             backdrop-filter: blur(2px);
         }
-
         @media (max-width: 1020px) {
             .sidebar {
                 transform: translateX(-100%);
             }
-
             .sidebar.open {
                 transform: translateX(0);
             }
-
             .sidebar-overlay.visible {
                 display: block;
             }
-
             .main-area {
                 margin-left: 0;
             }
-
             .mobile-menu-button {
                 display: grid;
             }
         }
-
         @media (max-width: 700px) {
             .topbar {
                 height: 68px;
                 padding: 0 17px;
             }
-
             .topbar-title h1 {
                 font-size: 17px;
             }
-
             .topbar-title p,
             .current-date {
                 display: none;
             }
-
             .topbar-logo {
                 width: 53px;
                 height: 45px;
             }
-
             .content-wrapper {
                 padding: 22px 16px 35px;
             }
-
             .page-header {
                 display: block;
             }
-
             .page-badge {
                 margin-top: 15px;
             }
-
             .page-title h2 {
                 font-size: 24px;
             }
         }
     </style>
-
     @stack('styles')
 </head>
-
 <body>
 @php
     $authUser = auth()->user();
     $authName = $authUser?->usuario ?? 'Auditoría';
-
     if ($authUser) {
         $personal = \Illuminate\Support\Facades\DB::table('datos_personales')
             ->where('usuario_id', $authUser->id)
             ->first(['nombres', 'apellidos']);
-
         if ($personal) {
             $fullName = trim(
                 ($personal->nombres ?? '') . ' ' .
                 ($personal->apellidos ?? '')
             );
-
             if ($fullName !== '') {
                 $authName = $fullName;
             }
         }
     }
-
     $routeOrUrl = fn (string $name, string $fallback) =>
         \Illuminate\Support\Facades\Route::has($name)
             ? route($name)
             : url($fallback);
-
     /*
     |--------------------------------------------------------------------------
     | Menú del rol Auditoría
@@ -632,26 +544,27 @@
     | Las rutas nuevas de Agencias ECOSABA se habilitarán cuando existan.
     |--------------------------------------------------------------------------
     */
-
     $menuGroups = [
-        [
-            'title' => 'General',
-            'items' => [
-                [
-                    'label' => 'Dashboard',
-                    'route' => 'auditoria.dashboard',
-                    'fallback' => '/auditoria/dashboard',
-                    'active' => ['auditoria.dashboard'],
+       [
+           'title' => 'General',
+           'items' => [
+               [
+                   'label' => 'Dashboard',
+                   'route' => 'auditoria.dashboard',
+                   'active' => ['auditoria.dashboard'],
                     'icon' => 'dashboard',
-                    'existing' => true,
                 ],
                 [
-                    'label' => 'Cumplimientos',
+                    'label' => 'Cumplimiento de Agentes',
                     'route' => 'auditoria.cumplimientos.index',
-                    'fallback' => '/auditoria/cumplimientos',
                     'active' => ['auditoria.cumplimientos.*'],
                     'icon' => 'calendar',
-                    'existing' => true,
+                ],
+                [
+                    'label' => 'Cumplimiento de Agencias',
+                    'route' => 'auditoria.cumplimiento-agencias.index',
+                    'active' => ['auditoria.cumplimiento-agencias.*'],
+                    'icon' => 'calendar',
                 ],
             ],
         ],
@@ -661,22 +574,14 @@
                 [
                     'label' => 'Realizar Arqueo',
                     'route' => 'auditoria.arqueos.create',
-                    'fallback' => '/auditoria/arqueos/crear',
                     'active' => ['auditoria.arqueos.create'],
                     'icon' => 'create',
-                    'existing' => true,
                 ],
                 [
                     'label' => 'Historial',
                     'route' => 'auditoria.arqueos.index',
-                    'fallback' => '/auditoria/arqueos',
-                    'active' => [
-                        'auditoria.arqueos.index',
-                        'auditoria.arqueos.show',
-                        'auditoria.arqueos.imprimir',
-                    ],
+                    'active' => ['auditoria.arqueos.index', 'auditoria.arqueos.show', 'auditoria.arqueos.imprimir'],
                     'icon' => 'history',
-                    'existing' => true,
                 ],
             ],
         ],
@@ -686,43 +591,31 @@
                 [
                     'label' => 'Realizar Arqueo',
                     'route' => 'auditoria.auditoria-agencias.create',
-                    'active' => ['auditoria.agencias.arqueos.create'],
+                    'active' => ['auditoria.auditoria-agencias.create'],
                     'icon' => 'create',
-                    'existing' => false,
                 ],
                 [
                     'label' => 'Historial',
                     'route' => 'auditoria.auditoria-agencias.index',
-                    'active' => [
-                        'auditoria.agencias.arqueos.index',
-                        'auditoria.agencias.arqueos.show',
-                        'auditoria.agencias.arqueos.imprimir',
-                    ],
+                    'active' => ['auditoria.auditoria-agencias.index', 'auditoria.auditoria-agencias.show', 'auditoria.auditoria-agencias.imprimir'],
                     'icon' => 'history',
-                    'existing' => false,
                 ],
             ],
         ],
         [
-            'title' => 'Análisis',
+            'title' => 'Reportes',
             'items' => [
                 [
                     'label' => 'Reportes de Agentes',
                     'route' => 'auditoria.reportes.index',
-                    'fallback' => '/auditoria/reportes',
                     'active' => ['auditoria.reportes.*'],
                     'icon' => 'reports',
-                    'existing' => true,
                 ],
                 [
                     'label' => 'Reportes de Agencias',
                     'route' => 'agencias.reportes.index',
-                    'fallback' => '/agencias/reportes',
-                    'active' => [
-                        'agencias.reportes.*',
-                    ],
+                    'active' => ['agencias.reportes.*'],
                     'icon' => 'reports',
-                    'existing' => true,
                 ],
             ],
         ],
@@ -732,17 +625,14 @@
                 [
                     'label' => 'Perfil',
                     'route' => 'auditoria.perfil.index',
-                    'fallback' => '/auditoria/perfil',
                     'active' => ['auditoria.perfil.*'],
                     'icon' => 'user',
-                    'existing' => true,
                 ],
                 [
                     'label' => 'Cambiar Contraseña',
                     'url' => url('/cambiar-password'),
                     'active' => [],
                     'icon' => 'lock',
-                    'existing' => true,
                 ],
             ],
         ],
@@ -791,12 +681,9 @@
         ],
     ];
 @endphp
-
 <div class="app-layout">
-
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-decoration"></div>
-
         <header class="sidebar-header">
             <div class="sidebar-logo-box">
                 <img
@@ -805,13 +692,11 @@
                     class="sidebar-logo"
                 >
             </div>
-
             <div class="sidebar-system-name">
                 <strong>Sistema Integral de Arqueos</strong>
                 <span>Auditoría Interna</span>
             </div>
         </header>
-
         <div class="sidebar-user">
             <span class="sidebar-user-avatar">
                 <svg
@@ -826,55 +711,36 @@
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
             </span>
-
             <div class="sidebar-user-info">
                 <strong>{{ $authName }}</strong>
                 <span>Auditoría</span>
             </div>
         </div>
-
         <nav class="sidebar-navigation" aria-label="Menú de Auditoría">
-
             @foreach($menuGroups as $group)
                 <p class="navigation-label">
                     {{ $group['title'] }}
                 </p>
-
                 <div class="navigation-list">
                     @foreach($group['items'] as $item)
                         @php
-                            $routeExists = \Illuminate\Support\Facades\Route::has(
-                                $item['route'] ?? ''
-                            );
-
-                            $enabled = ($item['existing'] ?? false)
-                                || $routeExists;
-
-                            $itemUrl = $item['url']
-                                ?? (
-                                    $routeExists
-                                        ? route($item['route'])
-                                        : (
-                                            $item['existing']
-                                                ? url($item['fallback'] ?? '#')
-                                                : null
-                                        )
-                                );
-
+                            $routeExists = !empty($item['route'])
+                               && \Illuminate\Support\Facades\Route::has($item['route']);
+                           $enabled = isset($item['url']) || $routeExists;
+                           $itemUrl = isset($item['url'])
+                               ? $item['url']
+                               : ($routeExists ? route($item['route']) : null);
                             $isActive = false;
-
                             foreach(($item['active'] ?? []) as $pattern) {
                                 if (request()->routeIs($pattern)) {
                                     $isActive = true;
                                     break;
                                 }
                             }
-
                             if (($item['icon'] ?? '') === 'lock') {
                                 $isActive = request()->is('cambiar-password');
                             }
                         @endphp
-
                         @if($enabled)
                             <a
                                 href="{{ $itemUrl }}"
@@ -891,12 +757,11 @@
                                         stroke-linejoin="round"
                                         aria-hidden="true"
                                     >
-                                        @foreach($menuIcons[$item['icon']] as $svgPart)
+                                       @foreach($menuIcons[$item['icon']] as $svgPart)
                                             {!! $svgPart !!}
                                         @endforeach
                                     </svg>
                                 </span>
-
                                 <span class="navigation-text">
                                     {{ $item['label'] }}
                                 </span>
@@ -921,7 +786,6 @@
                                         @endforeach
                                     </svg>
                                 </span>
-
                                 <span class="navigation-text">
                                     {{ $item['label'] }}
                                     <small class="pending-label">
@@ -933,13 +797,10 @@
                     @endforeach
                 </div>
             @endforeach
-
         </nav>
-
         <footer class="sidebar-footer">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-
                 <button type="submit" class="logout-button">
                     <svg
                         viewBox="0 0 24 24"
@@ -954,23 +815,18 @@
                         <path d="M15 12H3"/>
                         <path d="M21 19V5a2 2 0 0 0-2-2h-6"/>
                     </svg>
-
                     Cerrar sesión
                 </button>
             </form>
         </footer>
     </aside>
-
     <div
         class="sidebar-overlay"
         id="sidebarOverlay"
     ></div>
-
     <main class="main-area">
-
         <header class="topbar">
             <div class="topbar-left">
-
                 <button
                     type="button"
                     class="mobile-menu-button"
@@ -991,18 +847,15 @@
                         <path d="M4 18h16"/>
                     </svg>
                 </button>
-
                 <div class="topbar-title">
                     <h1>
                         @yield('module-title', 'Auditoría')
                     </h1>
-
                     <p>
                         Sistema Integral de Arqueos y Control de Efectivo
                     </p>
                 </div>
             </div>
-
             <div class="topbar-right">
                 <div class="current-date">
                     <svg
@@ -1018,10 +871,8 @@
                         <path d="M8 3v4"/>
                         <path d="M3 10h18"/>
                     </svg>
-
                     {{ now()->locale('es')->translatedFormat('d \d\e F \d\e Y') }}
                 </div>
-
                 <img
                     src="{{ asset('images/logos/agentes-micoope.png') }}"
                     alt="Agentes MICOOPE"
@@ -1029,54 +880,42 @@
                 >
             </div>
         </header>
-
         <div class="content-wrapper">
-
             @if(session('success'))
                 <div class="alert-message success">
                     {{ session('success') }}
                 </div>
             @endif
-
             @if(session('error'))
                 <div class="alert-message error">
                     {{ session('error') }}
                 </div>
             @endif
-
             @yield('content')
         </div>
     </main>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
         const menuButton = document.getElementById('mobileMenuButton');
-
         function openSidebar() {
             sidebar?.classList.add('open');
             overlay?.classList.add('visible');
-
             if (menuButton) {
                 menuButton.setAttribute('aria-expanded', 'true');
             }
-
             document.body.style.overflow = 'hidden';
         }
-
         function closeSidebar() {
             sidebar?.classList.remove('open');
             overlay?.classList.remove('visible');
-
             if (menuButton) {
                 menuButton.setAttribute('aria-expanded', 'false');
             }
-
             document.body.style.overflow = '';
         }
-
         menuButton?.addEventListener('click', function () {
             if (sidebar?.classList.contains('open')) {
                 closeSidebar();
@@ -1084,15 +923,12 @@
                 openSidebar();
             }
         });
-
         overlay?.addEventListener('click', closeSidebar);
-
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeSidebar();
             }
         });
-
         window.addEventListener('resize', function () {
             if (window.innerWidth > 1020) {
                 closeSidebar();
@@ -1100,7 +936,6 @@
         });
     });
 </script>
-
 @stack('scripts')
 </body>
-</html>
+</html> 
